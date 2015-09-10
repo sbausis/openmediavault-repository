@@ -1,0 +1,145 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+SCRIPTNAME=$(basename "$0")
+
+################################################################################
+## Need Packages
+
+NEEDEDPACKAGES=""
+if [ -z `which git` ]; then NEEDEDPACKAGES+="git-core "; fi
+if [ -n "${NEEDEDPACKAGES}" ]; then
+	echo "Need ${NEEDEDPACKAGES}, installing them..."
+	apt-get -qq -y install ${NEEDEDPACKAGES}
+fi
+
+################################################################################
+## Need TEMPDIR
+
+TEMPDIR=$(mktemp -d -t ${SCRIPTNAME}.XXXXXXXXXX)
+LOCKFILE=${TEMPDIR}/${SCRIPTNAME}.lock
+[ -f "${LOCKFILE}" ] && echo "ERROR ${LOCKFILE} already exist. !!!" && exit 255
+
+################################################################################
+## Need CleanUp
+
+function clean_up() {
+	
+	#echo "Clean up ..."
+	rm -Rf "${TEMPDIR}"
+	
+	if [ "$1" != "0" ]; then
+		echo "ERROR ..."
+		exit $1
+	else
+		#echo " -> Done ..."
+		exit 0
+	fi
+}
+
+function print_help() {
+	echo "
+${SCRIPTNAME}  version 0.1b
+Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
+
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+
+Options
+ -s,  --suite                 set Suite
+ -c,  --component             set Component
+"
+}
+
+function help_exit() {
+	print_help
+	clean_up 1
+}
+
+################################################################################
+
+function _build_package() {
+	local BUILDDIR="$1"
+	local PACKAGE="$2"
+	local BRANCH=${3:-"master"}
+	[ -d "${BUILDDIR}" ] || mkdir -p "${BUILDDIR}" &>/dev/null
+	[ -d "${BUILDDIR}/${PACKAGE}" ] && rm -Rf "${BUILDDIR}/${PACKAGE}" &>/dev/null
+	[ -f "${BUILDDIR}/${PACKAGE}_*_all.deb" ] && rm -f "${BUILDDIR}/${PACKAGE}_*_all.deb" &>/dev/null
+	#git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}" &>/dev/null
+	local PKGFILE=$(git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}" 2>&1 | grep "building package \`${PACKAGE}" | sed 's/.* in .\(.*\)../\1/')
+	echo "${PKGFILE}"
+	#if [ ! -d "${BUILDDIR}/${PACKAGE}" ]; then
+	#	git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}"
+	#else
+	#	(cd "${BUILDDIR}/${PACKAGE}" && git checkout -b ${BRANCH})
+	#fi
+	#sed --in-place 's|include ..|#include ..|' "${BUILDDIR}/${PACKAGE}/debian/rules"
+	set +e
+	(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b &>/dev/null)
+	#(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b)
+	set -e
+}
+function build_package() {
+	local BUILDDIR="$1"
+	local SUITE="$2"
+	local COMP="$3"
+	
+	local PACKAGE="$4"
+	local BRANCH=${5:-"master"}
+	
+	local PKGFILE=$(_build_package "${TEMPDIR}/${PACKAGE}-${BRANCH}" "${PACKAGE}" "${BRANCH}")
+	#echo "  - ${PKGFILE}"
+	
+	[ -d "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}" ] || \
+	mkdir -p ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE} &>/dev/null
+	
+	rm -f ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}*.deb &>/dev/null
+	cp -fv 	${TEMPDIR}/${PACKAGE}-${BRANCH}/${PACKAGE}_*_all.deb ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/
+	
+}
+
+################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up; exit 255; }" SIGHUP SIGINT SIGTERM SIGQUIT
+touch ${LOCKFILE}
+
+################################################################################
+## Need Arguments
+
+#BUILDDIR="/media/5fd18e51-966f-4664-b9cf-999c23d2855f/debarchive_build"
+#SUITE="$3"
+#COMP="$4"
+#PACKAGE="$5"
+#BRANCH="$6"
+
+while getopts ":o:s:c:p:b:" opt; do
+	case $opt in
+		o) BUILDDIR="$OPTARG" ;;
+		s) SUITE="$OPTARG" ;;
+		c) COMP="$OPTARG" ;;
+		p) PACKAGE="$OPTARG" ;;
+		b) BRANCH="$OPTARG" ;;
+		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
+		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
+	esac
+done
+
+if [ -z "${BUILDDIR}" ] && [ -z "${SUITE}" ] && [ -z "${COMP}" ] && [ -z "${PACKAGE}" ] && [ -z "${BRANCH}" ]; then
+	help_exit
+fi
+
+################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH}"
+
+build_package "${BUILDDIR}" "${SUITE}" "${COMP}" "${PACKAGE}" "${BRANCH}"
+
+clean_up 0
+
+################################################################################

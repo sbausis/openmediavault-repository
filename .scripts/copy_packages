@@ -1,0 +1,214 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+SCRIPTNAME=$(basename "$0")
+
+################################################################################
+## Need TEMPDIR
+
+TEMPDIR=$(mktemp -d -t ${SCRIPTNAME}.XXXXXXXXXX)
+LOCKFILE=${TEMPDIR}/${SCRIPTNAME}.lock
+[ -f "${LOCKFILE}" ] && echo "ERROR ${LOCKFILE} already exist. !!!" && exit 255
+
+################################################################################
+## Need CleanUp
+
+function clean_up() {
+	
+	#echo "Clean up ..."
+	rm -Rf "${TEMPDIR}"
+	
+	if [ "$1" != "0" ]; then
+		echo "ERROR ..."
+		exit $1
+	else
+		#echo " -> Done ..."
+		exit 0
+	fi
+}
+
+function print_help() {
+	echo "
+${SCRIPTNAME}  version 0.1b
+Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
+
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+
+Options
+ -d,  --directory             set Destination
+ -i,  --input-dir             set Input-Directory
+ -n,  --name                  set Name
+ -s,  --suites                set Suites
+ -c,  --components            set Components
+ -a,  --archs                 set Architectures
+"
+}
+
+function help_exit() {
+	print_help
+	clean_up 1
+}
+
+################################################################################
+
+function clean_all() {
+	local BASEDIR="$1"
+	local NAME="$2"
+	local SUITES="$3"
+	local COMPONENTS="$4"
+	local ARCHS="$5"
+	
+	[ -d "${BASEDIR}" ] || /bin/mkdir -p "${BASEDIR}"
+	
+	if [ "$REMOVEALL" != "1" ]; then
+		for SUITE in ${SUITES}; do
+			for COMP in ${COMPONENTS}; do
+				rm -f ${BASEDIR}/pool/dists/${SUITE}-${COMP}-*/*.deb
+			done
+		done
+	fi
+	
+	#rm -Rf ${BASEDIR}/pool/dists/*
+	
+}
+
+function copy_packages() {
+	local BASEDIR="$1"
+	local INPUTDIRS="$2"
+	local NAME="$3"
+	local SUITES="$4"
+	local COMPONENTS="$5"
+	local ARCHS="$6"
+	local TO_SUITE=${7:-""}
+	local TO_COMP=${8:-""}
+	
+	[ -d "${BASEDIR}/pool/dists" ] || mkdir -p "${BASEDIR}/pool/dists"
+	
+	for INPUTDIR in ${INPUTDIRS}; do
+		
+		for SUITE in ${SUITES}; do
+
+			for COMP in ${COMPONENTS}; do
+
+				local ALLDIR="${INPUTDIR}/${SUITE}/${COMP}/all"
+
+				for ARCH in ${ARCHS}; do
+
+					local INDIR="${INPUTDIR}/${SUITE}/${COMP}/${ARCH}"
+					local OUTDIR="${BASEDIR}/pool/dists"
+					
+					if [ -z "${TO_SUITE}" ]; then
+						OUTDIR="${OUTDIR}/${SUITE}"
+					else
+						OUTDIR="${OUTDIR}/${TO_SUITE}"
+					fi
+					
+					if [ -z "${TO_COMP}" ]; then
+						OUTDIR="${OUTDIR}-${COMP}-${ARCH}"
+					else
+						OUTDIR="${OUTDIR}-${TO_COMP}-${ARCH}"
+					fi
+					
+					echo "    ${INDIR} -> ${OUTDIR}"
+					
+					[ -d "${OUTDIR}" ] || mkdir -p "${OUTDIR}"
+					
+					if [ -d "${INDIR}" ]; then
+						for FILE in `find ${INDIR} -type f -name '*_'${ARCH}'.deb'`; do
+							local FILENAME=$(basename "${FILE}")
+							local DIRNAME=$(dirname "${FILE}")
+							local SUBDIR="${DIRNAME#${INDIR}/}"
+							[ -d "${OUTDIR}/${SUBDIR}" ] || mkdir -p "${OUTDIR}/${SUBDIR}"
+							#ls -Al ${OUTDIR}/${SUBDIR}/
+							#rm -fv ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb | tee -a ${OUTDIR}/.deleted
+							#rm -fv ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb
+							rm -f ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb
+							ln -f -s "${FILE}" "${OUTDIR}/${SUBDIR}/"
+							#ls -Al ${OUTDIR}/${SUBDIR}/
+						done
+					fi
+
+					if [ -d "${ALLDIR}" ]; then
+						for FILE in `find ${ALLDIR} -type f -name '*_all.deb'`; do
+							local FILENAME=$(basename "${FILE}")
+							local DIRNAME=$(dirname "${FILE}")
+							local SUBDIR="${DIRNAME#${ALLDIR}/}"
+							[ -d "${OUTDIR}/${SUBDIR}" ] || mkdir -p "${OUTDIR}/${SUBDIR}"
+							#ls -Al ${OUTDIR}/${SUBDIR}/
+							#rm -fv ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb | tee -a ${OUTDIR}/.deleted
+							#rm -fv ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb
+							rm -f ${OUTDIR}/${SUBDIR}/${FILENAME%%_*}*.deb
+							ln -f -s "${FILE}" "${OUTDIR}/${SUBDIR}/"
+							#ls -Al ${OUTDIR}/${SUBDIR}/
+						done
+					fi
+				done
+
+			done
+
+		done
+		
+	done
+	
+}
+
+################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up; exit 255; }" SIGHUP SIGINT SIGTERM SIGQUIT
+touch ${LOCKFILE}
+
+################################################################################
+## Need Arguments
+
+TO_SUITE=""
+TO_COMP=""
+REMOVEALL=1
+
+while getopts ":d:i:n:s:z:k:c:a:r" opt; do
+	case $opt in
+		d) BASEDIR="$OPTARG" ;;
+		i) INPUTDIRS="$OPTARG" ;;
+		n) DEBARCHIVE_NAME="$OPTARG" ;;
+		s) DEBARCHIVE_SUITES="$OPTARG" ;;
+		z) TO_SUITE="$OPTARG" ;;
+		k) TO_COMP="$OPTARG" ;;
+		c) DEBARCHIVE_COMPONENTS="$OPTARG" ;;
+		a) DEBARCHIVE_ARCHITECTURES="$OPTARG" ;;
+		r) REMOVEALL=0 ;;
+		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
+		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
+	esac
+done
+
+if [ -z "${BASEDIR}" ] && [ -z "${INPUTDIRS}" ] && [ -z "${DEBARCHIVE_NAME}" ] && [ -z "${DEBARCHIVE_SUITES}" ] && [ -z "${DEBARCHIVE_COMPONENTS}" ] && [ -z "${DEBARCHIVE_ARCHITECTURES}" ]; then
+	help_exit
+fi
+
+################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${DEBARCHIVE_NAME} ${DEBARCHIVE_SUITES} : ${TO_SUITE} ${DEBARCHIVE_COMPONENTS} : ${TO_COMP}"
+
+clean_all "${BASEDIR}" \
+				"${DEBARCHIVE_NAME}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${DEBARCHIVE_COMPONENTS}" \
+				"${DEBARCHIVE_ARCHITECTURES}"
+
+copy_packages "${BASEDIR}" "${INPUTDIRS}" \
+				"${DEBARCHIVE_NAME}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${DEBARCHIVE_COMPONENTS}" \
+				"${DEBARCHIVE_ARCHITECTURES}" \
+				"${TO_SUITE}" \
+				"${TO_COMP}"
+
+clean_up 0
+
+################################################################################

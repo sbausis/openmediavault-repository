@@ -1,0 +1,379 @@
+#!/bin/sh
+#
+# genkey [<lownum> <highnum> <username-prefix> <fqn>]
+# e.g: ./genkey 101 199 user no-such-domain.local
+# -> keys for user101@no-such-domain.local, ... , user199@no-such-domain.local
+#
+# or: ./genkey
+# -> keys for debarchive@localhost.local
+
+# exit on fail
+#set -x
+
+# here we go
+#GPGHOMEDIR="/media/5fd18e51-966f-4664-b9cf-999c23d2855f/debarchive_input/.gnupg"
+#DEFAULTUSER="master"
+#DEFAULTHOST="0rca.ch"
+
+# I have put everything in a single directory
+
+GPG=${GPG:-"/usr/bin/gpg"} 							# Set Executable
+
+GPGHOMEDIR=${GPGHOMEDIR:-"./.gnupg"} 				# Set workin Directory
+DEFAULTUSER=${DEFAULTUSER:-"debarchive"}  			# Set default User
+DEFAULTHOST=${DEFAULTHOST:-`hostname -f`} 			# Set default Domain
+
+GPGPUBRING=${GPGPUBRING:-"auto-pubring.gpg"} 		# Set public Keyring
+GPGSECRING=${GPGSECRING:-"auto-secring.gpg"} 		# Set secure Keyring
+
+GPGPARAM="--homedir $GPGHOMEDIR \
+			--no-options \
+			--batch \
+			--no-default-keyring \
+			--keyring $GPGHOMEDIR/$GPGPUBRING \
+			--secret-keyring $GPGHOMEDIR/$GPGSECRING"
+
+[ ! -d "$GPGHOMEDIR" ] && mkdir -p "$GPGHOMEDIR" && chmod 600 "$GPGHOMEDIR"
+
+######################
+# FUNCTIONS
+######################
+# $GPG $GPGPARAM $1
+list_keys() {
+	GPGEXTPARAM="--status-fd 2 --list-keys"
+	$GPG $GPGPARAM $GPGEXTPARAM "$1"
+}
+# $GPG $GPGPARAM $1
+has_key() {
+	#echo "has_key $#" >&2
+	#echo "has_key $*" >&2
+	GPGEXTPARAM="--status-fd 2 --list-keys"
+	$GPG $GPGPARAM $GPGEXTPARAM "$1" >/dev/null 2>&1
+	if [ "$?" = "0" ]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+
+# $GPG $GPGPARAM $GPGHOMEDIR $1
+export_key() {
+	#######################
+	# export the new keys for backup
+	#######################
+	local err=0
+	GPGEXTPARAM="--armor --output $GPGHOMEDIR/$1.pub.asc --export"
+    $GPG $GPGPARAM $GPGEXTPARAM "$1" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		err=1
+	fi
+		GPGEXTPARAM="--armor --output $GPGHOMEDIR/$1.sec.asc --export-secret-key"
+    $GPG $GPGPARAM $GPGEXTPARAM "$1" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		err=1
+	fi
+	if [ ! -f "$GPGHOMEDIR/$1.pub.asc" ] || [ ! -f "$GPGHOMEDIR/$1.sec.asc" ]; then
+		err=1
+	fi
+	echo $err
+}
+# $GPG $GPGPARAM $1
+sign_key() {
+	GPGEXTPARAM="--no-batch --logger-fd 2 --status-fd 2 --no-tty --command-fd 0 --default-cert-check-level 2 --sign-key"
+	echo -ne "\nY\n"| $GPG $GPGPARAM $GPGEXTPARAM "$1" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+# $GPG $GPGPARAM $1 $2
+import_key() {
+	GPGEXTPARAM="--status-fd 2 --logger-fd 2 --verbose --import"
+	$GPG $GPGPARAM $GPGEXTPARAM "$1" "$2" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+# $GPG $GPGPARAM $INPUTFILE $1 $2 $3
+generate_key() {
+	##################
+	# Build Input file
+	##################
+	# based on description in doc/DETAILS
+	#INPUTFILE=$GPGHOMEDIR/$1.inputfile
+	/bin/cat <<-EOF > "$INPUTFILE"
+		# input file to generate GnuPG keys automatically
+		%echo Generating a standard key
+		
+		#######################################
+		# parameters for the key
+		Key-Type: DSA
+		Key-Length: 1024
+		Subkey-Type: ELG-E
+		Subkey-Length: 2048
+		
+		Name-Real: $1
+		Name-Comment: automatically GnuPG key
+		Name-Email: $1
+		Expire-Date: 0
+		
+		######################################
+		# the keyring files
+		%pubring $2
+		%secring $3
+		
+		# perform key generation
+		%commit
+		%echo done
+		#EOF
+	EOF
+	
+	#######################
+	# Call Key generation
+	#######################
+	GPGEXTPARAM="--gen-key"
+    $GPG $GPGPARAM $GPGEXTPARAM "$INPUTFILE" >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+# $GPG $GPGPARAM $1 $2
+sign_file() {
+	#set -x
+	GPGEXTPARAM="--yes --default-key $2 --output $1.gpg --armor --detach-sign --sign"
+	$GPG $GPGPARAM $GPGEXTPARAM "$1" #>/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo 1
+	else
+		echo 0
+    fi
+	#set +x
+}
+
+# $$
+start_entrophy_generator() {
+	# we need entropie for /dev/random, only keyboard, mouse and the disk
+	# controller driver call the /dev/random-functions
+	/usr/bin/find / -fstype nfs -prune -o -printf "%F:%h:%f\n" -type f -exec cp -v {} /dev/null \; >/dev/null 2>&1 &
+}
+# $$
+stop_entrophy_generator() {
+	/usr/bin/killall -q find >/dev/null 2>&1
+}
+
+# $*
+quit_help() {
+	[ -n "$*" ] && echo "$*" >&2
+	echo "invalid arguments" >&2
+	stop_entrophy_generator
+	exit 1
+}
+# $*
+quit_fail() {
+    [ -n "$*" ] && echo "$*" >&2
+    echo "abort..." >&2
+    stop_entrophy_generator
+    exit 1
+}
+# $*
+quit_success() {
+	[ -n "$*" ] && echo "$*" >&2
+	echo "success" >&2
+	stop_entrophy_generator
+	exit 0
+}
+
+TIMEOUT=5 											# Set Lockfile timeout
+RETRY=10 											# Set Lockfile retry
+# $TIMEOUT $RETRY $1
+lock() {
+	if [ -n "$1" ]; then
+		#######################
+		# avoid race conditions if two processes wants to 	
+		# generate a key for the same user 
+		#######################
+	    if [ -e "$1" ]; then
+			# ok, someone else is creating the key, just wait until 
+			# this generation finished
+
+			echo "    someone else generates a new key" >&2
+			echo "    just sleep until this generation is completed" >&2
+			n=0
+			while [ -e "$1" ]; do
+			    /bin/sleep $TIMEOUT
+			    echo -n "." >&2
+				n=`expr $n + 1`
+				if [ $n -gt $RETRY ]; then
+					quit_fail "error Timeout - trying Lockfile $1 (force 'rm -f $1')"
+				fi
+			done
+
+			echo -e "\n    The other process has finished generation. Return to calling function" >&2
+	    fi
+
+		# WE are the one who generates the new key!
+	    /usr/bin/touch "$1"
+	else
+		echo "    proceed without lock" >&2
+	fi
+}
+
+# $TMPPUBRING $TMPSECRING $INPUTFILE $1
+GenKey() {
+	#######################
+	# Do we already have a key with this name
+	#######################
+	echo " -> searching for secret key '$1'" >&2
+	if [ `has_key "${1}"` = "0" ]; then
+	    quit_success "'$1' already in public keyring!"
+	fi
+	
+	#######################
+	# Do we already have a process running
+	#######################
+    echo " -> trying to lock keyring" >&2
+    lock $INPUTFILE
+	
+	#######################
+	# Call Key generation
+	#######################
+    echo " -> generating new key '$1'" >&2
+    if [ `generate_key "$1" "$TMPPUBRING" "$TMPSECRING"` -ne 0 ] ; then
+		quit_fail "error generating new Key '$1'"
+    fi
+	
+	#######################
+	# import the new key to the regular keyrings
+	#######################
+    echo " -> importing new key into keyring" >&2
+    if [ `import_key "$TMPPUBRING" "$TMPSECRING"` -ne 0 ]; then
+		quit_fail "error importing '$TMPPUBRING' and '$TMPSECRING' for '$1'"
+    fi
+	
+	#######################
+	# export the new keys for backup
+	#######################
+	echo " -> exporting new key for Backup" >&2
+    if [ `export_key "$1"` -ne 0 ]; then
+		quit_fail "error exporting '$1'"
+    fi
+	
+	######################
+	# Sign new key with "root CA" key -> first key in secret keyring
+	######################
+    echo " -> signing new key with 'root CA'" >&2
+    if [ `sign_key "$1"` -ne 0 ]; then
+		quit_fail "error signing new Key '$1'"
+    fi
+
+    echo " -> done with secret Key '$1'" >&2
+}
+
+######################
+# OPTIONS
+######################
+case $1 in
+	add)
+		shift
+		echo $#
+		[ $# -gt 0 ] && [ $# -lt 4 ] && quit_help
+		;;
+	list)
+		shift
+		list_keys
+		quit_success
+		;;
+	has)
+		shift
+		[ $# -gt 1 ] && quit_help
+		keyname=${1:-"$DEFAULTUSER@$DEFAULTHOST"}
+		if [ `has_key "${keyname}"` -eq 1 ]; then
+		    quit_fail "error '$keyname' NOT in public keyring!"
+	    fi
+		echo " -> '$keyname' already in public keyring" >&2
+		quit_success
+		;;
+	sign)
+		shift
+		[ $# -lt 1 ] && [ $# -gt 2 ] && quit_help
+		keyname=${2:-"$DEFAULTUSER@$DEFAULTHOST"}
+		if [ `has_key "${keyname}"` -eq 1 ]; then
+		    quit_fail "error '$keyname' NOT in public keyring!"
+	    fi
+		echo " -> signing File '$1'... with $keyname" >&2
+		if [ `sign_file "$1" "$keyname"` -eq 1 ]; then
+			quit_fail "error signing File '$1'"
+	    fi
+		quit_success
+		;;
+	pub)
+		shift
+		[ $# -lt 1 ] && [ $# -gt 2 ] && quit_help
+		keyname=${2:-"$DEFAULTUSER@$DEFAULTHOST"}
+		if [ `has_key "${keyname}"` -eq 1 ]; then
+		    quit_fail "error '$keyname' NOT in public keyring!"
+	    fi
+		echo " -> publishing PubKey '$1' from $keyname" >&2
+		if [ -f "$GPGHOMEDIR/$keyname.pub.asc" ]; then
+			cp -fv "$GPGHOMEDIR/$keyname.pub.asc" "$1"
+		else
+			quit_fail "error publishing PubKey '$1' from $keyname"
+	    fi
+		quit_success
+		;;
+	*)
+		quit_help
+		;;
+esac
+
+######################
+# MAIN
+######################
+if [ -z "$1" ]; then
+	num=0
+	max=0
+	user_prefix="$DEFAULTUSER"
+	fqn="$DEFAULTHOST"
+else
+	num=$1
+	max=$2
+	user_prefix="$3"
+	fqn="$4"
+fi
+
+while [ $num -le $max ]; do
+    
+	if [ $num -eq 0 ] && [ $max -eq 0 ]; then
+		KEYNAME="${user_prefix}@${fqn}"
+	else
+		KEYNAME="${user_prefix}${num}@${fqn}"
+	fi
+	
+	INPUTFILE="$GPGHOMEDIR/$KEYNAME.inputfile"
+	TMPSECRING="$GPGHOMEDIR/$KEYNAME.secring.pgp"
+	TMPPUBRING="$GPGHOMEDIR/$KEYNAME.pubring.pgp"
+	
+	trap "/bin/rm -f '$TMPSECRING' '$TMPPUBRING' '$INPUTFILE'; exit" INT TERM EXIT
+	
+	start_entrophy_generator
+	GenKey "$KEYNAME"
+	stop_entrophy_generator
+	
+	/bin/rm -f "$TMPSECRING" "$TMPPUBRING" "$INPUTFILE"
+	trap - INT TERM EXIT
+	
+    num=$(/usr/bin/expr $num + 1)
+	
+done
+
+echo " -> finished - listing keys..." >&2
+list_keys
+quit_success
+
+######################
+#EOF

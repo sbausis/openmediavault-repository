@@ -1,0 +1,266 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+SCRIPTNAME=$(basename "$0")
+DIRNAME=$(dirname "$0")
+
+################################################################################
+## Need TEMPDIR
+
+TEMPDIR=$(mktemp -d -t ${SCRIPTNAME}.XXXXXXXXXX)
+LOCKFILE=${TEMPDIR}/${SCRIPTNAME}.lock
+[ -f "${LOCKFILE}" ] && echo "ERROR ${LOCKFILE} already exist. !!!" && exit 255
+
+################################################################################
+## Need CleanUp
+
+function clean_up() {
+	
+	#echo "Clean up ..."
+	rm -Rf "${TEMPDIR}"
+	
+	if [ "$1" != "0" ]; then
+		echo "ERROR ..."
+		exit $1
+	else
+		#echo " -> Done ..."
+		exit 0
+	fi
+}
+
+function print_help() {
+	echo "
+${SCRIPTNAME}  version 0.1b
+Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
+
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+
+Options
+ -d,  --directory             set Destination
+ -i,  --input-dir             set Input-Directory
+ -n,  --name                  set Name
+ -s,  --suites                set Suites
+ -c,  --components            set Components
+ -a,  --archs                 set Architectures
+"
+}
+
+function help_exit() {
+	print_help
+	clean_up 1
+}
+
+################################################################################
+
+function clean_all() {
+	local BASEDIR="$1"
+	local NAME="$2"
+	local SUITES="$3"
+	local COMPONENTS="$4"
+	local ARCHS="$5"
+	
+	[ -d "${BASEDIR}" ] || /bin/mkdir -p "${BASEDIR}"
+	
+	if [ "$REMOVEALL" != "1" ]; then
+		rm -f "${BASEDIR}/.conf/*-${NAME}.conf"
+		for SUITE in ${SUITES}; do
+			rm -f ${BASEDIR}/dists/${SUITE}/Release*
+			rm -f ${BASEDIR}/dists/${SUITE}/Contents-*
+			for COMP in ${COMPONENTS}; do
+				rm -f ${BASEDIR}/dists/${SUITE}/${COMP}/binary-*/Packages*
+				rm -f ${BASEDIR}/pool/dists/${SUITE}-${COMP}-*/cachedb.db
+			done
+		done
+	fi
+	
+}
+
+function make_release_config() {
+	local BASEDIR="$1"
+	local NAME="$2"
+	local SUITES="$3"
+	local COMPONENTS="$4"
+	local ARCHS="$5"
+	local CONFFILE="${BASEDIR}/.conf/apt-release-${NAME}.conf"
+	[ -d "$(dirname ${CONFFILE})" ] || /bin/mkdir -p "$(dirname ${CONFFILE})"
+	cat <<EOF > "$CONFFILE"
+APT::FTPArchive::Release::Origin "$NAME";
+APT::FTPArchive::Release::Label "$NAME";
+APT::FTPArchive::Release::Suite "$SUITES";
+APT::FTPArchive::Release::Codename "$NAME";
+APT::FTPArchive::Release::Architectures "$ARCHS";
+APT::FTPArchive::Release::Components "$COMPONENTS";
+APT::FTPArchive::Release::Description "$NAME";
+EOF
+}
+
+function make_debarchive_config() {
+	local BASEDIR="$1"
+	local NAME="$2"
+	local SUITES="$3"
+	local COMPONENTS="$4"
+	local ARCHS="$5"
+	local CONFFILE="${BASEDIR}/.conf/apt-ftparchive-${NAME}.conf"
+	[ -d "$(dirname ${CONFFILE})" ] || /bin/mkdir -p "$(dirname ${CONFFILE})"
+	cat <<EOF > "$CONFFILE"
+Dir {
+    ArchiveDir "$BASEDIR";
+    OverrideDir "$BASEDIR";
+    CacheDir "$BASEDIR";
+    FileListDir "$BASEDIR";
+};
+
+TreeDefault {
+    Directory "pool/\$(DIST)-\$(SECTION)-\$(ARCH)";
+    SrcDirectory "pool/\$(DIST)_CODENAME-source/";
+    Packages "\$(DIST)/\$(SECTION)/binary-\$(ARCH)/Packages";
+    Sources "\$(DIST)/\$(SECTION)/source/Sources";
+    InternalPrefix "\$(DIST)/\$(SECTION)/.";
+    Contents "\$(DIST)/Contents-\$(ARCH)";
+    BinCacheDB "pool/\$(DIST)-\$(SECTION)-\$(ARCH)/cachedb.db";
+};
+
+Default {
+    Packages::Compress ". gzip bzip2";
+    Packages::Extensions ".deb";
+    Sources::Compress ". gzip bzip2";
+    Sources::Extensions ".deb";
+    Contents::Compress ". gzip bzip2";
+};
+EOF
+	
+	for SUITE in ${SUITES}; do
+		cat <<EOF >> "$CONFFILE"
+
+Tree "dists/$SUITE" {
+    Sections "$COMPONENTS";
+    Architectures "$ARCHS";
+};
+
+EOF
+	done
+	
+}
+
+function generate_archive() {
+	local BASEDIR="$1"
+	local NAME="$2"
+	local SUITES="$3"
+	local COMPONENTS="$4"
+	local ARCHS="$5"
+	local GPGHOMEDIR=${6:-""}
+	
+	for SUITE in ${SUITES}; do
+		for COMP in ${COMPONENTS}; do
+			for ARCH in ${ARCHS}; do
+				[ -d "$BASEDIR/dists/$SUITE/$COMP/binary-$ARCH" ] \
+					|| /bin/mkdir -p "$BASEDIR/dists/$SUITE/$COMP/binary-$ARCH"
+				[ -d "$BASEDIR/pool/dists/$SUITE-$COMP-$ARCH" ] \
+					|| /bin/mkdir -p "$BASEDIR/pool/dists/$SUITE-$COMP-$ARCH"
+			done
+		done
+	done
+	
+	apt-ftparchive generate "${BASEDIR}/.conf/apt-ftparchive-${NAME}.conf"
+	
+	for SUITE in ${SUITES}; do
+		
+		make_release_config "${BASEDIR}" \
+						"${SUITE}" \
+						"${SUITE}" \
+						"${DEBARCHIVE_COMPONENTS}" \
+						"${DEBARCHIVE_ARCHITECTURES}"
+		
+		apt-ftparchive -c "${BASEDIR}/.conf/apt-release-${SUITE}.conf" \
+				release "${BASEDIR}/dists/${SUITE}" \
+				> "${BASEDIR}/dists/${SUITE}/Release"
+		
+	done
+	
+}
+
+function sign_release() {
+	local BASEDIR="$1"
+	local SUITES="$2"
+	local GPGDIR="$3"
+	
+	for SUITE in ${SUITES}; do
+		
+		export GPGHOMEDIR="${GPGDIR}" 				# Set workin Directory
+		#export DEFAULTUSER="master"					# Set default User
+		#export DEFAULTHOST="0rca.ch"				# Set default Domain
+		#export GPGPUBRING="auto-pubring.gpg" 		# Set public Keyring
+		#export GPGSECRING="auto-secring.gpg" 		# Set secure Keyring
+		
+		${DIRNAME}/debarchive-keyring sign "${BASEDIR}/dists/${SUITE}/Release" "master@0rca.ch"
+		
+	done
+	
+}
+
+################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up; exit 255; }" SIGHUP SIGINT SIGTERM SIGQUIT
+touch ${LOCKFILE}
+
+################################################################################
+## Need Arguments
+
+REMOVEALL=1
+
+while getopts ":d:g:n:s:c:a:r" opt; do
+	case $opt in
+		d) BASEDIR="$OPTARG" ;;
+		g) GPGDIR="$OPTARG" ;;
+		n) DEBARCHIVE_NAME="$OPTARG" ;;
+		s) DEBARCHIVE_SUITES="$OPTARG" ;;
+		c) DEBARCHIVE_COMPONENTS="$OPTARG" ;;
+		a) DEBARCHIVE_ARCHITECTURES="$OPTARG" ;;
+		r) REMOVEALL=0 ;;
+		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
+		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
+	esac
+done
+
+if [ -z "${BASEDIR}" ] && [ -z "${GPGDIR}" ] && [ -z "${DEBARCHIVE_NAME}" ] && [ -z "${DEBARCHIVE_SUITES}" ] && [ -z "${DEBARCHIVE_COMPONENTS}" ] && [ -z "${DEBARCHIVE_ARCHITECTURES}" ]; then
+	help_exit
+fi
+
+################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${DEBARCHIVE_NAME} ${DEBARCHIVE_SUITES} ${DEBARCHIVE_COMPONENTS} ${DEBARCHIVE_ARCHITECTURES}"
+
+clean_all "${BASEDIR}" \
+				"${DEBARCHIVE_NAME}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${DEBARCHIVE_COMPONENTS}" \
+				"${DEBARCHIVE_ARCHITECTURES}"
+
+make_debarchive_config "${BASEDIR}" \
+				"${DEBARCHIVE_NAME}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${DEBARCHIVE_COMPONENTS}" \
+				"${DEBARCHIVE_ARCHITECTURES}"
+
+generate_archive "${BASEDIR}" \
+				"${DEBARCHIVE_NAME}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${DEBARCHIVE_COMPONENTS}" \
+				"${DEBARCHIVE_ARCHITECTURES}"
+
+sign_release "${BASEDIR}" \
+				"${DEBARCHIVE_SUITES}" \
+				"${GPGDIR}" \
+
+chown -R www-data:users ${BASEDIR}
+
+clean_up 0
+
+################################################################################

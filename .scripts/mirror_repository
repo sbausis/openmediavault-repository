@@ -1,0 +1,293 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+SCRIPTNAME=$(basename "$0")
+
+################################################################################
+## Need Packages
+
+NEEDEDPACKAGES=""
+if [ -z `which gunzip` ]; then NEEDEDPACKAGES+="gzip "; fi
+if [ -z `which bunzip2` ]; then NEEDEDPACKAGES+="bzip2 "; fi
+if [ -n "${NEEDEDPACKAGES}" ]; then
+	echo "Need ${NEEDEDPACKAGES}, installing them..."
+	apt-get -qq -y install ${NEEDEDPACKAGES}
+fi
+
+################################################################################
+## Need TEMPDIR
+
+TEMPDIR=$(mktemp -d -t ${SCRIPTNAME}.XXXXXXXXXX)
+LOCKFILE=${TEMPDIR}/${SCRIPTNAME}.lock
+[ -f "${LOCKFILE}" ] && echo "ERROR ${LOCKFILE} already exist. !!!" && exit 255
+
+################################################################################
+## Need CleanUp
+
+function clean_up() {
+	
+	#echo "Clean up ..."
+	rm -Rf "${TEMPDIR}"
+	
+	if [ "$1" != "0" ]; then
+		echo "ERROR ..."
+		exit $1
+	else
+		echo " -> Done ..."
+		exit 0
+	fi
+}
+
+function print_help() {
+	echo "
+${SCRIPTNAME}  version 0.1b
+Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
+
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+
+Options
+ -d,  --directory             set Destination
+ -u,  --url                   set Base-URL
+ -s,  --suites                set Suites
+ -c,  --components            set Components
+ -a,  --archs                 set Architectures
+"
+}
+
+function help_exit() {
+	print_help
+	clean_up 1
+}
+
+################################################################################
+
+function validate_url(){
+	# simple function to check http response code before downloading a remote file
+	# example usage:
+	# if `validate_url $url >/dev/null`; then dosomething; else echo "does not exist"; fi
+	if [[ `wget -S --spider $1  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then echo "0"; fi
+}
+
+function parse_package_file() {
+	local FILE="$1"
+	local OUTPUT="$2"
+	local PACKAGELIST=$(cat "${FILE}" | grep -e "^Filename:" -e "^MD5sum:"  | sed -e 's/^\(.*\): \(.*\)/\1=\2;/') 2>&1 >/dev/null
+	
+	if [ "$?" == "0" ]; then
+		touch "${OUTPUT}" 2>&1 >/dev/null
+	else 
+		rm -f "${OUTPUT}" 2>&1 >/dev/null
+	fi
+	
+	local NAME=""
+	OFS="$IFS"; IFS=$'\n';
+	for LINE in ${PACKAGELIST}; do
+		if [ -z "$NAME" ]; then
+			NAME="${LINE}"
+		else
+			echo "${NAME} ${LINE}" >> "${OUTPUT}"
+			NAME=""
+		fi
+	done; IFS="$OFS"
+	
+}
+function download_package_file() {
+	local BASEURL="$1"
+	local SUITE="$2"
+	local COMPONENT="$3"
+	local ARCH="$4"
+	local OUTPUT="$5"
+	
+	local DISTURL="${BASEURL}/dists/${SUITE}/${COMPONENT}/binary-${ARCH}/Packages"
+	
+	RET=1
+	
+	if [ "$RET" != "0" ] && [ -n "$(wget -S --spider ${DISTURL}.gz 2>&1 | grep 'HTTP/1.1 200 OK')" ]; then
+		wget -q -O - "${DISTURL}.gz" | gunzip -c -d > "${OUTPUT}"
+		RET=$?
+	fi
+	
+	#if [ "$RET" != "0" ] && [ -n "$(wget -S --spider ${DISTURL}.bz2 2>&1 | grep 'HTTP/1.1 200 OK')" ]; then
+	#	wget -q -O - "${DISTURL}.bz2" | bunzip2 -c -d > "${OUTPUT}"
+	#	RET=$?
+	#fi
+	
+	if [ "$RET" != "0" ] && [ -n "$(wget -S --spider ${DISTURL} 2>&1 | grep 'HTTP/1.1 200 OK')" ]; then
+		wget -q -O - "${DISTURL}" > "${OUTPUT}"
+		RET=$?
+	fi
+	
+	if [ "$RET" != "0" ]; then
+		rm -f "${OUTPUT}" 2>&1 >/dev/null
+	fi
+	
+	#if [ -f "${OUTPUT}" ]; then
+	#	#parse_package_file "${OUTPUT}" "${OUTPUT}"
+	#	echo "${OUTPUT}"
+	#fi
+}
+
+function download_package() {
+	local BASEURL="$1"
+	local SUITE="$2"
+	local COMPONENT="$3"
+	local ARCH="$4"
+	local FILENAME="$5"
+	local MD5SUM="$6"
+	local DESTDIR="$7"
+	
+	#echo "${BASEURL} ${FILENAME} ${MD5SUM} ${DESTDIR}"
+	
+	if [ -z "${FILENAME#*_all.deb}" ]; then
+		ARCH="all"
+	fi
+	
+	local PACKAGENAME="${FILENAME##*/}"
+	local PACKAGEPATH="${FILENAME%/*}"
+	local PACKAGESUBDIR="${PACKAGEPATH#pool/main/}"
+	local PACKAGEDIR="${BASEDIR}/${SUITE}/${COMPONENT}/${ARCH}/${PACKAGESUBDIR}"
+	#local PACKAGEDIR="${BASEDIR}/${SUITE}/${COMPONENT}/${PACKAGESUBDIR}"
+	local PACKAGEURL="${BASEURL}/${FILENAME}"
+
+	[ -d "${PACKAGEDIR}" ] || mkdir -p "${PACKAGEDIR}"
+	
+	if [ -f "${PACKAGEDIR}/${PACKAGENAME}" ]; then
+		if [ "${MD5SUM}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(md5sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
+			rm -f "${PACKAGEDIR}/${PACKAGENAME}"
+			echo "ERROR failed to verify Package (${PACKAGENAME}) !!!"
+		fi
+	fi
+	
+	if [ ! -f "${PACKAGEDIR}/${PACKAGENAME}" ]; then
+		wget -O "${PACKAGEDIR}/${PACKAGENAME}" "${PACKAGEURL}" 2>&1 >/dev/null
+		if [ "${MD5SUM}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(md5sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
+			rm -f "${PACKAGEDIR}/${PACKAGENAME}"
+			echo "ERROR failed to verify Package (${PACKAGENAME}) !!!"
+			clean_up 4
+		fi
+	fi
+	
+	if [ ! -f "${PACKAGEDIR}/${PACKAGENAME}" ]; then
+		echo "ERROR failed to download Package (${PACKAGENAME}) !!!"
+		clean_up 3
+	fi
+}
+function download_packages() {
+	local BASEURL="$1"
+	local SUITE="$2"
+	local COMPONENT="$3"
+	local ARCH="$4"
+	local FILE="$5"
+	local DESTDIR="$6"
+	
+	[ -d "${DESTDIR}" ] || mkdir -p "${DESTDIR}"
+	
+	local PACKAGELIST=$(cat "${FILE}") 2>&1 >/dev/null
+	PACKAGECNT=$(echo "${PACKAGELIST}" | wc -l) 2>&1 >/dev/null
+	
+	local Filename=""
+	local MD5sum=""
+	
+	local PACKAGENUM=0
+	OFS="$IFS"; IFS=$'\n';
+	for LINE in ${PACKAGELIST}; do
+		eval "${LINE}" 2>&1 >/dev/null
+		if [ -n "${Filename}" ] && [ -n "${MD5sum}" ]; then
+			PACKAGENUM=$(expr ${PACKAGENUM} + 1)
+			#printf "[${PACKAGENUM}/${PACKAGECNT}] "
+			download_package "${BASEURL}" "${SUITE}" "${COMPONENT}" "${ARCH}" "${Filename}" "${MD5sum}" "${DESTDIR}"
+		fi
+	done; IFS="$OFS"
+}
+
+function download_dist() {
+	local BASEURL="$1"
+	local SUITES="$2"
+	local COMPONENTS="$3"
+	local ARCHS="$4"
+	local DESTDIR="$5"
+	
+	[ -d "${DESTDIR}" ] || mkdir -p "${DESTDIR}"
+	
+	for SUITE in ${SUITES}; do
+		
+		for COMPONENT in ${COMPONENTS}; do
+			
+			for ARCH in ${ARCHS}; do
+				
+				rm -f "${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list"
+				
+				download_package_file "${BASEURL}" "${SUITE}" "${COMPONENT}" "${ARCH}" "${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list"
+				if [ ! -f "${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list" ]; then
+					echo "ERROR failed to get Package-List !!!"
+					#clean_up 1
+				else
+					echo " -> check ${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list ..."
+					parse_package_file "${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list" "${TEMPDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.parsed"
+					if [ ! -f "${TEMPDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.parsed" ]; then
+						echo "ERROR failed to parse Package-List !!!"
+						clean_up 2
+					else
+						
+						download_packages "${BASEURL}" "${SUITE}" "${COMPONENT}" "${ARCH}" "${TEMPDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.parsed" "${BASEDIR}"
+						
+					fi
+					
+				fi
+				
+				rm -f "${BASEDIR}/${SUITE}-${COMPONENT}-${ARCH}-Packages.list"
+				
+			done
+			
+		done
+		
+	done
+	
+}
+
+################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up; exit 255; }" SIGHUP SIGINT SIGTERM SIGQUIT
+touch ${LOCKFILE}
+
+################################################################################
+## Need Arguments
+
+#BASEDIR="/tmp/openmediavault"
+#BASEURL="http://packages.openmediavault.org/public"
+#SUITES="stoneburner kralizec sardaukar"
+#COMPONENTS="main"
+#ARCHS="amd64 armel armhf i386 powerpc"
+
+while getopts ":d:u:s:c:a:" opt; do
+	case $opt in
+		d) BASEDIR="$OPTARG" ;;
+		u) BASEURL="$OPTARG" ;;
+		s) SUITES="$OPTARG" ;;
+		c) COMPONENTS="$OPTARG" ;;
+		a) ARCHS="$OPTARG" ;;
+		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
+		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
+	esac
+done
+
+if [ -z "${BASEDIR}" ] && [ -z "${BASEURL}" ] && [ -z "${SUITES}" ] && [ -z "${COMPONENTS}" ] && [ -z "${ARCHS}" ]; then
+	help_exit
+fi
+
+################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${BASEURL} ${SUITES} ${COMPONENTS} ${ARCHS} ${BASEDIR}"
+
+download_dist "${BASEURL}" "${SUITES}" "${COMPONENTS}" "${ARCHS}" "${BASEDIR}"
+
+clean_up 0
+
+################################################################################
