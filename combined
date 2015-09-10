@@ -11,9 +11,6 @@ SCRIPTDIR=$(dirname "$0")
 SCRIPTDIR=$(cd ${SCRIPTDIR} && pwd)
 SCRIPTDIR="${SCRIPTDIR}/.scripts"
 
-################################################################################
-################################################################################
-
 OUTDIR=${1:-"/media/5fd18e51-966f-4664-b9cf-999c23d2855f/debarchive"}
 [ -d "$(dirname ${OUTDIR})" ] || exit 1
 
@@ -22,7 +19,6 @@ rm -Rf ${OUTDIR}/openmediavault
 ################################################################################
 ########################################################################################################################
 ################################################################################
-#${SCRIPTDIR}/openmediavault_mirror "${OUTDIR}/.openmediavault-mirror"
 
 if [ "$2" == "mirror" ]; then
 	
@@ -32,10 +28,6 @@ if [ "$2" == "mirror" ]; then
 		-s "stoneburner" \
 		-c "main" \
 		-a "amd64 i386"
-	
-	################################################################################
-	################################################################################
-	#${SCRIPTDIR}/omvextras_mirror "${OUTDIR}/.omvextras-mirror"
 	
 	${SCRIPTDIR}/mirror_repository \
 		-d "${OUTDIR}/.omvextras-mirror" \
@@ -49,7 +41,6 @@ fi
 ################################################################################
 ########################################################################################################################
 ################################################################################
-#${SCRIPTDIR}/openmediavault_build "${OUTDIR}/.openmediavault-build"
 
 rm -Rf ${OUTDIR}/.openmediavault-build
 
@@ -82,8 +73,6 @@ ${SCRIPTDIR}/build_package \
 #	-b "testing"
 
 ################################################################################
-################################################################################
-#${SCRIPTDIR}/omvextras_build "${OUTDIR}/.omvextras-build"
 
 rm -Rf ${OUTDIR}/.omvextras-build
 
@@ -132,7 +121,6 @@ ${SCRIPTDIR}/build_package \
 ################################################################################
 ########################################################################################################################
 ################################################################################
-#${SCRIPTDIR}/openmediavault_copy "${OUTDIR}/openmediavault" "${OUTDIR}/.openmediavault-mirror" "${OUTDIR}/.openmediavault-build"
 
 ${SCRIPTDIR}/copy_packages \
 	-d "${OUTDIR}/openmediavault" \
@@ -161,8 +149,6 @@ ${SCRIPTDIR}/copy_packages \
 	-a "amd64 i386"
 
 ################################################################################
-################################################################################
-#${SCRIPTDIR}/omvextras_copy "${OUTDIR}/omvextras" "${OUTDIR}/.omvextras-mirror" "${OUTDIR}/.omvextras-build"
 
 ${SCRIPTDIR}/copy_packages \
 	-d "${OUTDIR}/openmediavault" \
@@ -196,7 +182,6 @@ ${SCRIPTDIR}/copy_packages \
 ################################################################################
 ########################################################################################################################
 ################################################################################
-#${SCRIPTDIR}/openmediavault_debarchive "${OUTDIR}/openmediavault"
 
 ${SCRIPTDIR}/debarchive_repository \
 	-d "${OUTDIR}/openmediavault" \
@@ -215,28 +200,6 @@ ${SCRIPTDIR}/debarchive_repository \
 	-c "testing" \
 	-a "amd64 i386" \
 	-r
-
-################################################################################
-################################################################################
-#${SCRIPTDIR}/omvextras_debarchive "${OUTDIR}/omvextras"
-
-#${SCRIPTDIR}/debarchive_repository \
-#	-d "${OUTDIR}/omvextras" \
-#	-g "${OUTDIR}/.gnupg" \
-#	-n "omvextras" \
-#	-s "stoneburner" \
-#	-c "main" \
-#	-a "amd64 i386" \
-#	-r
-#
-#${SCRIPTDIR}/debarchive_repository \
-#	-d "${OUTDIR}/omvextras" \
-#	-g "${OUTDIR}/.gnupg" \
-#	-n "omvextras" \
-#	-s "stoneburner" \
-#	-c "testing" \
-#	-a "amd64 i386" \
-#	-r
 
 ################################################################################
 ########################################################################################################################
