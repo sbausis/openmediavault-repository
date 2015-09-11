@@ -56,7 +56,7 @@ fi
 ########################################################################################################################
 ################################################################################
 
-rm -Rf ${OUTDIR}/.openmediavault-build
+#rm -Rf ${OUTDIR}/.openmediavault-build
 
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
@@ -88,7 +88,7 @@ ${SCRIPTDIR}/build_package \
 
 ################################################################################
 
-rm -Rf ${OUTDIR}/.omvextras-build
+#rm -Rf ${OUTDIR}/.omvextras-build
 
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.omvextras-build" \
@@ -136,6 +136,8 @@ ${SCRIPTDIR}/build_package \
 ########################################################################################################################
 ################################################################################
 
+#rm -Rf ${OUTDIR}/openmediavault
+
 ${SCRIPTDIR}/copy_packages \
 	-d "${OUTDIR}/openmediavault" \
 	-i "${OUTDIR}/.openmediavault-mirror ${OUTDIR}/.openmediavault-build" \
@@ -164,7 +166,7 @@ ${SCRIPTDIR}/copy_packages \
 
 ################################################################################
 
-rm -Rf ${OUTDIR}/openmediavault
+#rm -Rf ${OUTDIR}/omvextras
 
 if [ "${COMBINED}" == "0" ]; then
 	
@@ -198,8 +200,6 @@ if [ "${COMBINED}" == "0" ]; then
 		-a "amd64 i386"
 	
 else
-	
-	rm -Rf ${OUTDIR}/omvextras
 	
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
