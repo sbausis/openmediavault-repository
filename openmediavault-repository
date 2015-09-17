@@ -65,6 +65,13 @@ ${SCRIPTDIR}/build_package \
 	-p "openmediavault" \
 	-b "master"	
 
+${SCRIPTDIR}/build_package \
+	-o "${OUTDIR}/.openmediavault-build" \
+	-s "stoneburner" \
+	-c "main" \
+	-p "openmediavault-menuconfig" \
+	-b "master"	
+
 #${SCRIPTDIR}/build_package \
 #	-o "${OUTDIR}/.openmediavault-build" \
 #	-s "stoneburner" \
