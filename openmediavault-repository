@@ -68,9 +68,9 @@ ${SCRIPTDIR}/build_package \
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
 	-s "stoneburner" \
-	-c "main" \
-	-p "openmediavault-menuconfig" \
-	-b "master"	
+	-c "testing" \
+	-p "openmediavault" \
+	-b "testing"	
 
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
@@ -83,15 +83,22 @@ ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
 	-s "stoneburner" \
 	-c "testing" \
-	-p "openmediavault" \
-	-b "testing"	
+	-p "openmediavault-keyring" \
+	-b "testing"
+
+${SCRIPTDIR}/build_package \
+	-o "${OUTDIR}/.openmediavault-build" \
+	-s "stoneburner" \
+	-c "main" \
+	-p "openmediavault-menuconfig" \
+	-b "master"	
 
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
 	-s "stoneburner" \
 	-c "testing" \
-	-p "openmediavault-keyring" \
-	-b "testing"
+	-p "openmediavault-menuconfig" \
+	-b "testing"	
 
 ################################################################################
 
@@ -118,26 +125,26 @@ ${SCRIPTDIR}/build_package \
 	-p "openmediavault-dnsmasq" \
 	-b "master"
 
-${SCRIPTDIR}/build_package \
-	-o "${OUTDIR}/.omvextras-build" \
-	-s "stoneburner" \
-	-c "testing" \
-	-p "openmediavault-omvextrasorg" \
-	-b "testing"
-
-${SCRIPTDIR}/build_package \
-	-o "${OUTDIR}/.omvextras-build" \
-	-s "stoneburner" \
-	-c "testing" \
-	-p "openmediavault-ddclient" \
-	-b "testing"
-
-${SCRIPTDIR}/build_package \
-	-o "${OUTDIR}/.omvextras-build" \
-	-s "stoneburner-testing" \
-	-c "testing" \
-	-p "openmediavault-dnsmasq" \
-	-b "testing"
+#${SCRIPTDIR}/build_package \
+#	-o "${OUTDIR}/.omvextras-build" \
+#	-s "stoneburner" \
+#	-c "testing" \
+#	-p "openmediavault-omvextrasorg" \
+#	-b "testing"
+#
+#${SCRIPTDIR}/build_package \
+#	-o "${OUTDIR}/.omvextras-build" \
+#	-s "stoneburner" \
+#	-c "testing" \
+#	-p "openmediavault-ddclient" \
+#	-b "testing"
+#
+#${SCRIPTDIR}/build_package \
+#	-o "${OUTDIR}/.omvextras-build" \
+#	-s "stoneburner-testing" \
+#	-c "testing" \
+#	-p "openmediavault-dnsmasq" \
+#	-b "testing"
 
 ################################################################################
 ########################################################################################################################
@@ -187,24 +194,24 @@ if [ "${COMBINED}" == "0" ]; then
 		-a "amd64 i386" \
 		-r
 	
-	${SCRIPTDIR}/copy_packages \
-		-d "${OUTDIR}/openmediavault" \
-		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
-		-n "omvextras" \
-		-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
-		-z "stoneburner" \
-		-c "main" \
-		-k "testing" \
-		-a "amd64 i386"
-	
-	${SCRIPTDIR}/copy_packages \
-		-d "${OUTDIR}/openmediavault" \
-		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
-		-n "omvextras" \
-		-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
-		-z "stoneburner" \
-		-c "testing" \
-		-a "amd64 i386"
+	#${SCRIPTDIR}/copy_packages \
+	#	-d "${OUTDIR}/openmediavault" \
+	#	-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
+	#	-n "omvextras" \
+	#	-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
+	#	-z "stoneburner" \
+	#	-c "main" \
+	#	-k "testing" \
+	#	-a "amd64 i386"
+	#
+	#${SCRIPTDIR}/copy_packages \
+	#	-d "${OUTDIR}/openmediavault" \
+	#	-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
+	#	-n "omvextras" \
+	#	-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
+	#	-z "stoneburner" \
+	#	-c "testing" \
+	#	-a "amd64 i386"
 	
 else
 	
@@ -217,22 +224,22 @@ else
 		-a "amd64 i386" \
 		-r
 	
-	${SCRIPTDIR}/copy_packages \
-		-d "${OUTDIR}/omvextras" \
-		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
-		-n "omvextras" \
-		-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
-		-c "main" \
-		-k "testing" \
-		-a "amd64 i386"
-	
-	${SCRIPTDIR}/copy_packages \
-		-d "${OUTDIR}/omvextras" \
-		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
-		-n "omvextras" \
-		-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
-		-c "testing" \
-		-a "amd64 i386"
+	#${SCRIPTDIR}/copy_packages \
+	#	-d "${OUTDIR}/omvextras" \
+	#	-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
+	#	-n "omvextras" \
+	#	-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
+	#	-c "main" \
+	#	-k "testing" \
+	#	-a "amd64 i386"
+	#
+	#${SCRIPTDIR}/copy_packages \
+	#	-d "${OUTDIR}/omvextras" \
+	#	-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
+	#	-n "omvextras" \
+	#	-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
+	#	-c "testing" \
+	#	-a "amd64 i386"
 	
 fi
 
@@ -240,46 +247,25 @@ fi
 ########################################################################################################################
 ################################################################################
 
-if [ "${COMBINED}" == "0" ]; then
-	
-	${SCRIPTDIR}/debarchive_repository \
-		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
-		-n "openmediavault" \
-		-s "stoneburner" \
-		-c "main" \
-		-a "amd64 i386" \
-		-r
-	
-	${SCRIPTDIR}/debarchive_repository \
-		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
-		-n "openmediavault" \
-		-s "stoneburner" \
-		-c "testing" \
-		-a "amd64 i386" \
-		-r
-	
-else
-	
-	${SCRIPTDIR}/debarchive_repository \
-		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
-		-n "openmediavault" \
-		-s "stoneburner" \
-		-c "main" \
-		-a "amd64 i386" \
-		-r
-	
-	${SCRIPTDIR}/debarchive_repository \
-		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
-		-n "openmediavault" \
-		-s "stoneburner" \
-		-c "testing" \
-		-a "amd64 i386" \
-		-r
-	
+${SCRIPTDIR}/debarchive_repository \
+	-d "${OUTDIR}/openmediavault" \
+	-g "${OUTDIR}/.gnupg" \
+	-n "openmediavault" \
+	-s "stoneburner" \
+	-c "main" \
+	-a "amd64 i386" \
+	-r
+
+${SCRIPTDIR}/debarchive_repository \
+	-d "${OUTDIR}/openmediavault" \
+	-g "${OUTDIR}/.gnupg" \
+	-n "openmediavault" \
+	-s "stoneburner" \
+	-c "testing" \
+	-a "amd64 i386" \
+	-r
+
+if [ "${COMBINED}" == "1" ]; then
 	
 	${SCRIPTDIR}/debarchive_repository \
 		-d "${OUTDIR}/omvextras" \
@@ -290,14 +276,14 @@ else
 		-a "amd64 i386" \
 		-r
 	
-	${SCRIPTDIR}/debarchive_repository \
-		-d "${OUTDIR}/omvextras" \
-		-g "${OUTDIR}/.gnupg" \
-		-n "omvextras" \
-		-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
-		-c "testing" \
-		-a "amd64 i386" \
-		-r
+	#${SCRIPTDIR}/debarchive_repository \
+	#	-d "${OUTDIR}/omvextras" \
+	#	-g "${OUTDIR}/.gnupg" \
+	#	-n "omvextras" \
+	#	-s "stoneburner stoneburner-backports stoneburner-beta stoneburner-btsync stoneburner-docker-testing stoneburner-docker stoneburner-dotdeb stoneburner-gluster stoneburner-greyhole stoneburner-hwraid stoneburner-mono-testing stoneburner-mono stoneburner-other stoneburner-plex stoneburner-testing stoneburner-vb stoneburner-vdr stoneburner-zfs-testing stoneburner-zfs" \
+	#	-c "testing" \
+	#	-a "amd64 i386" \
+	#	-r
 	
 fi
 
