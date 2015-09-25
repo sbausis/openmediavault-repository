@@ -72,12 +72,12 @@ ${SCRIPTDIR}/build_package \
 	-p "openmediavault-menuconfig" \
 	-b "master"	
 
-#${SCRIPTDIR}/build_package \
-#	-o "${OUTDIR}/.openmediavault-build" \
-#	-s "stoneburner" \
-#	-c "main" \
-#	-p "openmediavault-keyring" \
-#	-b "master"
+${SCRIPTDIR}/build_package \
+	-o "${OUTDIR}/.openmediavault-build" \
+	-s "stoneburner" \
+	-c "main" \
+	-p "openmediavault-keyring" \
+	-b "master"
 
 ${SCRIPTDIR}/build_package \
 	-o "${OUTDIR}/.openmediavault-build" \
@@ -86,12 +86,12 @@ ${SCRIPTDIR}/build_package \
 	-p "openmediavault" \
 	-b "testing"	
 
-#${SCRIPTDIR}/build_package \
-#	-o "${OUTDIR}/.openmediavault-build" \
-#	-s "stoneburner" \
-#	-c "testing" \
-#	-p "openmediavault-keyring" \
-#	-b "testing"
+${SCRIPTDIR}/build_package \
+	-o "${OUTDIR}/.openmediavault-build" \
+	-s "stoneburner" \
+	-c "testing" \
+	-p "openmediavault-keyring" \
+	-b "testing"
 
 ################################################################################
 
