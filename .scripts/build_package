@@ -80,8 +80,12 @@ function _build_package() {
 	#fi
 	#sed --in-place 's|include ..|#include ..|' "${BUILDDIR}/${PACKAGE}/debian/rules"
 	set +e
-	(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b &>/dev/null)
+	#(cd "${BUILDDIR}/${PACKAGE}" && git submodule init)
+	#(cd "${BUILDDIR}/${PACKAGE}" && git submodule update)
 	#(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b)
+	(cd "${BUILDDIR}/${PACKAGE}" && git submodule init &>/dev/null)
+	(cd "${BUILDDIR}/${PACKAGE}" && git submodule update &>/dev/null)
+	(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b &>/dev/null)
 	set -e
 }
 function build_package() {
