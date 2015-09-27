@@ -91,7 +91,7 @@ function copy_packages() {
 	[ -d "${BASEDIR}/pool/dists" ] || mkdir -p "${BASEDIR}/pool/dists"
 	
 	for INPUTDIR in ${INPUTDIRS}; do
-		
+		[ ! -d "${INPUTDIR}" ] && continue
 		for SUITE in ${SUITES}; do
 
 			for COMP in ${COMPONENTS}; do

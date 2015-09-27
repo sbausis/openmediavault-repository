@@ -77,7 +77,7 @@ function validate_url(){
 function parse_package_file() {
 	local FILE="$1"
 	local OUTPUT="$2"
-	local PACKAGELIST=$(cat "${FILE}" | grep -e "^Filename:" -e "^MD5sum:"  | sed -e 's/^\(.*\): \(.*\)/\1=\2;/') 2>&1 >/dev/null
+	local PACKAGELIST=$(cat "${FILE}" | grep -e "^Filename:" -e "^SHA1:"  | sed -e 's/^\(.*\): \(.*\)/\1=\2;/') 2>&1 >/dev/null
 	
 	if [ "$?" == "0" ]; then
 		touch "${OUTPUT}" 2>&1 >/dev/null
@@ -139,7 +139,7 @@ function download_package() {
 	local COMPONENT="$3"
 	local ARCH="$4"
 	local FILENAME="$5"
-	local MD5SUM="$6"
+	local SHA1="$6"
 	local DESTDIR="$7"
 	
 	#echo "${BASEURL} ${FILENAME} ${MD5SUM} ${DESTDIR}"
@@ -158,7 +158,7 @@ function download_package() {
 	[ -d "${PACKAGEDIR}" ] || mkdir -p "${PACKAGEDIR}"
 	
 	if [ -f "${PACKAGEDIR}/${PACKAGENAME}" ]; then
-		if [ "${MD5SUM}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(md5sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
+		if [ "${SHA1}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(sha1sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
 			rm -f "${PACKAGEDIR}/${PACKAGENAME}"
 			echo "ERROR failed to verify Package (${PACKAGENAME}) !!!"
 		fi
@@ -166,7 +166,7 @@ function download_package() {
 	
 	if [ ! -f "${PACKAGEDIR}/${PACKAGENAME}" ]; then
 		wget -O "${PACKAGEDIR}/${PACKAGENAME}" "${PACKAGEURL}" 2>&1 >/dev/null
-		if [ "${MD5SUM}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(md5sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
+		if [ "${SHA1}  ${PACKAGEDIR}/${PACKAGENAME}" != "$(sha1sum ${PACKAGEDIR}/${PACKAGENAME})" ]; then
 			rm -f "${PACKAGEDIR}/${PACKAGENAME}"
 			echo "ERROR failed to verify Package (${PACKAGENAME}) !!!"
 			clean_up 4
@@ -192,16 +192,16 @@ function download_packages() {
 	PACKAGECNT=$(echo "${PACKAGELIST}" | wc -l) 2>&1 >/dev/null
 	
 	local Filename=""
-	local MD5sum=""
+	local SHA1=""
 	
 	local PACKAGENUM=0
 	OFS="$IFS"; IFS=$'\n';
 	for LINE in ${PACKAGELIST}; do
 		eval "${LINE}" 2>&1 >/dev/null
-		if [ -n "${Filename}" ] && [ -n "${MD5sum}" ]; then
+		if [ -n "${Filename}" ] && [ -n "${SHA1}" ]; then
 			PACKAGENUM=$(expr ${PACKAGENUM} + 1)
 			#printf "[${PACKAGENUM}/${PACKAGECNT}] "
-			download_package "${BASEURL}" "${SUITE}" "${COMPONENT}" "${ARCH}" "${Filename}" "${MD5sum}" "${DESTDIR}"
+			download_package "${BASEURL}" "${SUITE}" "${COMPONENT}" "${ARCH}" "${Filename}" "${SHA1}" "${DESTDIR}"
 		fi
 	done; IFS="$OFS"
 }
