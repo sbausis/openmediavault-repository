@@ -157,14 +157,14 @@ function build_package() {
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "master" \
-		-p "openmediavault-iptables" \
+		-p "openmediavault-firewall" \
 		-b "master"
 	############################################################################
 	${SCRIPTDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
-		-p "openmediavault-iptables" \
+		-p "openmediavault-firewall" \
 		-b "testing"
 	############################################################################
 	${SCRIPTDIR}/build_package \
