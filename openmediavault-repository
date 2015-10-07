@@ -147,6 +147,13 @@ function build_package() {
 		-b "testing"
 	############################################################################
 	${SCRIPTDIR}/build_package \
+		-o "${OUTDIR}/.openmediavault-build" \
+		-s "stoneburner" \
+		-c "testing" \
+		-p "openmediavault-testplugin" \
+		-b "master"
+	############################################################################
+	${SCRIPTDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
