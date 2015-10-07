@@ -96,7 +96,10 @@ function build_package() {
 	local PACKAGE="$4"
 	local BRANCH=${5:-"main"}
 	
-	if [ ! -f "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref" ] || [ `cat "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref"` != `git ls-remote https://github.com/sbausis/${PACKAGE}.git | grep "refs/heads/${BRANCH}" | awk '{print $1}'` ]; then
+	local REMOTE_REF=$(git ls-remote https://github.com/sbausis/${PACKAGE}.git | grep "refs/heads/${BRANCH}" | awk '{print $1}')
+	local LOCAL_REF=$([ -f "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref" ] && cat "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref")
+	
+	if [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
 		
 		local PKGFILE=$(_build_package "${TEMPDIR}/${PACKAGE}-${BRANCH}" "${PACKAGE}" "${BRANCH}")
 		#echo "  - ${PKGFILE}"
@@ -107,10 +110,11 @@ function build_package() {
 		rm -f ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}*.deb &>/dev/null
 		cp -fv 	${TEMPDIR}/${PACKAGE}-${BRANCH}/${PACKAGE}_*_all.deb ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/
 		
-		git ls-remote https://github.com/sbausis/${PACKAGE}.git | grep "refs/heads/${BRANCH}" | awk '{print $1}' > "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref"
+		echo "${LOCAL_REF}" > "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.bkp"
+		echo "${REMOTE_REF}" > "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref"
 		
 	else
-		
+		rm -f "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.bkp"
 		echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH} already up to date ..."
 		
 	fi
