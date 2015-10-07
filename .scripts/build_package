@@ -67,26 +67,20 @@ function _build_package() {
 	local BUILDDIR="$1"
 	local PACKAGE="$2"
 	local BRANCH=${3:-"main"}
+	
 	[ -d "${BUILDDIR}" ] || mkdir -p "${BUILDDIR}" &>/dev/null
 	[ -d "${BUILDDIR}/${PACKAGE}" ] && rm -Rf "${BUILDDIR}/${PACKAGE}" &>/dev/null
 	[ -f "${BUILDDIR}/${PACKAGE}*.deb" ] && rm -f "${BUILDDIR}/${PACKAGE}*.deb" &>/dev/null
-	#git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}" &>/dev/null
-	local PKGFILE=$(git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}" 2>&1 | grep "building package \`${PACKAGE}" | sed 's/.* in .\(.*\)../\1/')
-	echo "${PKGFILE}"
-	#if [ ! -d "${BUILDDIR}/${PACKAGE}" ]; then
-	#	git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}"
-	#else
-	#	(cd "${BUILDDIR}/${PACKAGE}" && git checkout -b ${BRANCH})
-	#fi
-	#sed --in-place 's|include ..|#include ..|' "${BUILDDIR}/${PACKAGE}/debian/rules"
+	
+	git clone -b ${BRANCH} https://github.com/sbausis/${PACKAGE}.git "${BUILDDIR}/${PACKAGE}" &>/dev/null
+	
 	set +e
-	#(cd "${BUILDDIR}/${PACKAGE}" && git submodule init)
-	#(cd "${BUILDDIR}/${PACKAGE}" && git submodule update)
-	#(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b)
 	(cd "${BUILDDIR}/${PACKAGE}" && git submodule init &>/dev/null)
 	(cd "${BUILDDIR}/${PACKAGE}" && git submodule update &>/dev/null)
 	(cd "${BUILDDIR}/${PACKAGE}" && dpkg-buildpackage -b &>/dev/null)
 	set -e
+	
+	[ -f ${BUILDDIR}/${PACKAGE}*.deb ] && ls ${BUILDDIR}/${PACKAGE}*.deb
 }
 function build_package() {
 	local BUILDDIR="$1"
