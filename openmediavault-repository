@@ -29,7 +29,7 @@ done
 
 [ -d "$(dirname ${OUTDIR})" ] || exit 1
 
-rm -Rf ${OUTDIR}/openmediavault ${OUTDIR}/omvextras
+#rm -Rf ${OUTDIR}/openmediavault ${OUTDIR}/omvextras
 
 ################################################################################
 function mirror_repository() {
@@ -207,16 +207,14 @@ function copy_packages() {
 		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.dh2k-mirror ${OUTDIR}/.dh2k-build" \
 		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
@@ -224,8 +222,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "stoneburner-beta" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
@@ -233,8 +230,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "stoneburner-zfs" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
@@ -242,8 +238,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "stoneburner-zfs-testing" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
@@ -251,8 +246,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "stoneburner-docker" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 	${SCRIPTDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
@@ -260,8 +254,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "stoneburner-docker-testing" \
 		-c "main" \
-		-a "amd64 i386" \
-		-r
+		-a "amd64 i386"
 	############################################################################
 }
 ################################################################################

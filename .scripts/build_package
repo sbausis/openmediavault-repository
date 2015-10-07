@@ -66,7 +66,7 @@ function help_exit() {
 function _build_package() {
 	local BUILDDIR="$1"
 	local PACKAGE="$2"
-	local BRANCH=${3:-"master"}
+	local BRANCH=${3:-"main"}
 	[ -d "${BUILDDIR}" ] || mkdir -p "${BUILDDIR}" &>/dev/null
 	[ -d "${BUILDDIR}/${PACKAGE}" ] && rm -Rf "${BUILDDIR}/${PACKAGE}" &>/dev/null
 	[ -f "${BUILDDIR}/${PACKAGE}_*_all.deb" ] && rm -f "${BUILDDIR}/${PACKAGE}_*_all.deb" &>/dev/null
@@ -94,16 +94,27 @@ function build_package() {
 	local COMP="$3"
 	
 	local PACKAGE="$4"
-	local BRANCH=${5:-"master"}
+	local BRANCH=${5:-"main"}
 	
-	local PKGFILE=$(_build_package "${TEMPDIR}/${PACKAGE}-${BRANCH}" "${PACKAGE}" "${BRANCH}")
-	#echo "  - ${PKGFILE}"
+	if [ ! -f "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref" ] || [ `cat "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref"` != `git ls-remote https://github.com/sbausis/${PACKAGE}.git | grep "refs/heads/${BRANCH}" | awk '{print $1}'` ]; then
+		
+		local PKGFILE=$(_build_package "${TEMPDIR}/${PACKAGE}-${BRANCH}" "${PACKAGE}" "${BRANCH}")
+		#echo "  - ${PKGFILE}"
+
+		[ -d "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}" ] || \
+		mkdir -p ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE} &>/dev/null
+
+		rm -f ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}*.deb &>/dev/null
+		cp -fv 	${TEMPDIR}/${PACKAGE}-${BRANCH}/${PACKAGE}_*_all.deb ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/
+		
+		git ls-remote https://github.com/sbausis/${PACKAGE}.git | grep "refs/heads/${BRANCH}" | awk '{print $1}' > "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}_${BRANCH}.ref"
+		
+	else
+		
+		echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH} already up to date ..."
+		
+	fi
 	
-	[ -d "${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}" ] || \
-	mkdir -p ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE} &>/dev/null
-	
-	rm -f ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/${PACKAGE}*.deb &>/dev/null
-	cp -fv 	${TEMPDIR}/${PACKAGE}-${BRANCH}/${PACKAGE}_*_all.deb ${BUILDDIR}/${SUITE}/${COMP}/all/o/${PACKAGE}/
 	
 }
 
