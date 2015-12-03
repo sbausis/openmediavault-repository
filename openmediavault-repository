@@ -183,8 +183,8 @@ function build_package() {
 	############################################################################
 	${SCRIPTDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
-		-s "stoneburner" \
-		-c "testing" \
+		-s "stoneburner-testing" \
+		-c "main" \
 		-p "openmediavault-pxe" \
 		-b "master"
 	############################################################################
