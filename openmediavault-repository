@@ -1,15 +1,97 @@
 #!/bin/bash
 
 set -e
-#set -x
+set -x
+
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+SCRIPTNAME=$(basename "$0")
+SCRIPTDIR=$(cd `dirname "$0"` && pwd)
+SCRIPTSDIR="${SCRIPTDIR}/.scripts"
 
 ################################################################################
+## Need Packages
 
-SCRIPTDIR=$(dirname "$0")
-SCRIPTDIR=$(cd ${SCRIPTDIR} && pwd)
-SCRIPTDIR="${SCRIPTDIR}/.scripts"
+NEEDEDPACKAGES=""
+if [ -z `which git` ]; then NEEDEDPACKAGES+="git-core "; fi
+if [ -n "${NEEDEDPACKAGES}" ]; then
+	echo "Need ${NEEDEDPACKAGES}, installing them..."
+	apt-get -qq -y install ${NEEDEDPACKAGES}
+fi
 
-OUTDIR="/media/5fd18e51-966f-4664-b9cf-999c23d2855f/debarchive"
+################################################################################
+## Need TEMPDIR
+
+TEMPDIR=$(mktemp -d -t ${SCRIPTNAME}.XXXXXXXXXX)
+LOCKFILE=${TEMPDIR}.lock
+[ -f "${LOCKFILE}" ] && echo "ERROR ${LOCKFILE} already exist. !!!" && exit 255
+
+################################################################################
+## Need CleanUp
+
+function clean_up() {
+	
+	echo "Clean up ..."
+	
+	rm -Rf "${TEMPDIR}"
+	rm -f "${LOCKFILE}"
+	
+	trap "" SIGHUP SIGINT SIGTERM SIGQUIT EXIT
+	if [ "$1" != "0" ]; then
+		echo "ERROR ..."
+		exit $1
+	else
+		echo "DONE ..."
+		exit 0
+	fi
+}
+
+function print_help() {
+	echo "
+${SCRIPTNAME}  version 0.1b
+Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
+
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+
+Options
+ -o          set OUTFILE
+"
+}
+
+function help_exit() {
+	print_help
+	clean_up 1
+}
+
+################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up 255; }" SIGHUP SIGINT SIGTERM SIGQUIT EXIT
+touch ${LOCKFILE}
+
+################################################################################
+# need newest Script installed
+
+local REMOTE_REF=$(git ls-remote https://github.com/sbausis/openmediavault-repository.git | grep "refs/heads/master" | awk '{print $1}')
+local LOCAL_REF=$([ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
+
+if [ "${SCRIPTDIR}" != "/usr/local/lib/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
+
+	git clone https://github.com/sbausis/openmediavault-repository.git ${TEMPDIR}/openmediavault-repository
+	rm -Rf /usr/local/lib/openmediavault-repository
+	mkdir -p /usr/local/lib/openmediavault-repository
+	cp -Rf ${TEMPDIR}/openmediavault-repository/${SCRIPTNAME} ${TEMPDIR}/openmediavault-repository/.scripts /usr/local/lib/openmediavault-repository/
+	echo "${REMOTE_REF}" > "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref"
+	bash /usr/local/lib/openmediavault-repository/${SCRIPTNAME} $@ && clean_up $?
+
+fi
+
+################################################################################
+# need Arguments
+
+OUTDIR=""
 MIRROR="1"
 BUILD="1"
 COPY="1"
@@ -27,65 +109,70 @@ while getopts ":o:mbcd" opt; do
 	esac
 done
 
-[ -d "$(dirname ${OUTDIR})" ] || exit 1
+[ -z "${OUTDIR}" ] && [ -f "~/.openmediavault-repository" ] && source "~/.openmediavault-repository"
 
-#rm -Rf ${OUTDIR}/openmediavault ${OUTDIR}/omvextras
+[ -d "${OUTDIR}" ] || exit 1
+
+################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${OUTDIR}"
+STARTTIME=`date +%s`
 
 ################################################################################
 function mirror_repository() {
-	local SCRIPTDIR="$1"
+	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.openmediavault-mirror" \
 		-u "http://packages.openmediavault.org/public" \
 		-s "stoneburner" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.omvextras-mirror" \
 		-u "http://omv-extras.org/debian" \
 		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.dh2k-mirror" \
 		-u "http://dh2k.omv-extras.org/debian" \
 		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.bintray-stoneburner-beta-mirror" \
 		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-beta" \
 		-s "wheezy" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.bintray-stoneburner-zfs-mirror" \
 		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-zfs" \
 		-s "wheezy" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.bintray-stoneburner-zfs-testing-mirror" \
 		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-zfstesting" \
 		-s "wheezy" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.bintray-stoneburner-docker-mirror" \
 		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-docker" \
 		-s "wheezy" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/mirror_repository \
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.bintray-stoneburner-docker-testing-mirror" \
 		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-docker2" \
 		-s "wheezy" \
@@ -95,100 +182,100 @@ function mirror_repository() {
 }
 ################################################################################
 if [ "${MIRROR}" == "0" ]; then
-	mirror_repository "${SCRIPTDIR}" "${OUTDIR}"
+	mirror_repository "${SCRIPTSDIR}" "${OUTDIR}"
 fi
 ################################################################################
 
 ################################################################################
 function build_package() {
-	local SCRIPTDIR="$1"
+	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault" \
 		-b "main"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault" \
 		-b "testing"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-keyring" \
 		-b "main"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-keyring" \
 		-b "testing"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-menuconfig" \
 		-b "master"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-menuconfig" \
 		-b "testing"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-testplugin" \
 		-b "master"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-firewall" \
 		-b "master"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-firewall" \
 		-b "testing"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-omvextrasorg" \
 		-b "main"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-ddclient" \
 		-b "main"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-pxe" \
 		-b "main"
 	############################################################################
-	${SCRIPTDIR}/build_package \
+	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
@@ -198,16 +285,16 @@ function build_package() {
 }
 ################################################################################
 if [ "${BUILD}" == "0" ]; then
-	build_package "${SCRIPTDIR}" "${OUTDIR}"	
+	build_package "${SCRIPTSDIR}" "${OUTDIR}"	
 fi
 ################################################################################
 
 ################################################################################
 function copy_packages() {
-	local SCRIPTDIR="$1"
+	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/openmediavault" \
 		-i "${OUTDIR}/.openmediavault-mirror ${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
@@ -215,7 +302,7 @@ function copy_packages() {
 		-a "amd64 i386" \
 		-r
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/openmediavault" \
 		-i "${OUTDIR}/.openmediavault-mirror ${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
@@ -223,28 +310,28 @@ function copy_packages() {
 		-k "testing" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/openmediavault" \
 		-i "${OUTDIR}/.openmediavault-mirror ${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.omvextras-mirror ${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.dh2k-mirror ${OUTDIR}/.dh2k-build" \
 		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-beta-mirror ${OUTDIR}/.bintray-stoneburner-beta-build" \
 		-s "wheezy" \
@@ -252,7 +339,7 @@ function copy_packages() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-zfs-mirror ${OUTDIR}/.bintray-stoneburner-zfs-build" \
 		-s "wheezy" \
@@ -260,7 +347,7 @@ function copy_packages() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-zfs-testing-mirror ${OUTDIR}/.bintray-stoneburner-zfs-testing-build" \
 		-s "wheezy" \
@@ -268,7 +355,7 @@ function copy_packages() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-docker-mirror ${OUTDIR}/.bintray-stoneburner-docker-build" \
 		-s "wheezy" \
@@ -276,7 +363,7 @@ function copy_packages() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
-	${SCRIPTDIR}/copy_packages \
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-docker-testing-mirror ${OUTDIR}/.bintray-stoneburner-docker-testing-build" \
 		-s "wheezy" \
@@ -287,16 +374,16 @@ function copy_packages() {
 }
 ################################################################################
 if [ "${COPY}" == "0" ]; then
-	copy_packages "${SCRIPTDIR}" "${OUTDIR}"	
+	copy_packages "${SCRIPTSDIR}" "${OUTDIR}"	
 fi
 ################################################################################
 
 ################################################################################
 function debarchive_repository() {
-	local SCRIPTDIR="$1"
+	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
 	############################################################################
-	${SCRIPTDIR}/debarchive_repository \
+	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/openmediavault" \
 		-g "${OUTDIR}/.gnupg" \
 		-n "openmediavault" \
@@ -305,7 +392,7 @@ function debarchive_repository() {
 		-a "amd64 i386" \
 		-r
 	############################################################################
-	${SCRIPTDIR}/debarchive_repository \
+	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/openmediavault" \
 		-g "${OUTDIR}/.gnupg" \
 		-n "openmediavault" \
@@ -314,7 +401,7 @@ function debarchive_repository() {
 		-a "amd64 i386" \
 		-r
 	############################################################################
-	${SCRIPTDIR}/debarchive_repository \
+	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/omvextras" \
 		-g "${OUTDIR}/.gnupg" \
 		-n "omvextras" \
@@ -326,11 +413,14 @@ function debarchive_repository() {
 }
 ################################################################################
 if [ "${DEBARCHIVE}" == "0" ]; then
-	debarchive_repository "${SCRIPTDIR}" "${OUTDIR}"	
+	debarchive_repository "${SCRIPTSDIR}" "${OUTDIR}"	
 fi
 ################################################################################
 
-################################################################################
-echo "[ DONE ]"
-exit 0
+STOPTIME=`date +%s`
+RUNTIME=$((STOPTIME-STARTTIME))
+echo "Runtime: $RUNTIME sec"
+
+clean_up 0
+
 ################################################################################
