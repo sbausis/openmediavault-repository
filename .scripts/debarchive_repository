@@ -200,6 +200,8 @@ function sign_release() {
 		
 		${DIRNAME}/debarchive-keyring sign "${BASEDIR}/dists/${SUITE}/Release" "master@0rca.ch"
 		
+		[ -f "${BASEDIR}/PublicKey.asc" ] || ${DIRNAME}/debarchive-keyring pub "${BASEDIR}/PublicKey.asc" "master@0rca.ch"
+		
 	done
 	
 }
