@@ -126,7 +126,7 @@ fi
 ################################################################################
 # need Arguments
 
-[ -z "${OUTDIR}" ] && [ -f "~/.openmediavault-repository" ] && source "~/.openmediavault-repository"
+[ -z "${OUTDIR}" ] && [ -f ~/.openmediavault-repository ] && source ~/.openmediavault-repository
 
 if [ ! -d "${OUTDIR}" ]; then
 	echo "no OUTDIR"
