@@ -99,24 +99,24 @@ done
 ################################################################################
 # need newest Script installed
 
-REMOTE_REF=$(git ls-remote https://github.com/sbausis/openmediavault-repository.git | grep "refs/heads/master" | awk '{print $1}')
-[ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && LOCAL_REF=$(cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
+REMOTE_REF=$(git ls-remote https://github.com/sbausis/${SCRIPTNAME}.git | grep "refs/heads/master" | awk '{print $1}')
+[ -f "/usr/local/lib/${SCRIPTNAME}/${SCRIPTNAME}.ref" ] && LOCAL_REF=$(cat "/usr/local/lib/${SCRIPTNAME}/${SCRIPTNAME}.ref")
 
-if [ ! -f "/usr/local/bin/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ] || [ "${INSTALL}" == "0" ]; then
+if [ ! -f "/usr/local/bin/${SCRIPTNAME}" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ] || [ "${INSTALL}" == "0" ]; then
 	
-	echo "Installing to /usr/local/lib/openmediavault-repository ..."
-	git clone https://github.com/sbausis/openmediavault-repository.git ${TEMPDIR}/openmediavault-repository
-	rm -Rf /usr/local/lib/openmediavault-repository
-	mkdir -p /usr/local/lib/openmediavault-repository
-	cp -Rf ${TEMPDIR}/openmediavault-repository/${SCRIPTNAME} ${TEMPDIR}/openmediavault-repository/.scripts /usr/local/lib/openmediavault-repository/
-	echo "${REMOTE_REF}" > "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref"
-	cat <<EOF > /usr/local/bin/openmediavault-repository
+	echo "Installing to /usr/local/lib/${SCRIPTNAME} ..."
+	git clone https://github.com/sbausis/${SCRIPTNAME}.git ${TEMPDIR}/${SCRIPTNAME}
+	rm -Rf /usr/local/lib/${SCRIPTNAME}
+	mkdir -p /usr/local/lib/${SCRIPTNAME}
+	cp -Rf ${TEMPDIR}/${SCRIPTNAME}/${SCRIPTNAME} ${TEMPDIR}/${SCRIPTNAME}/.scripts /usr/local/lib/${SCRIPTNAME}/
+	echo "${REMOTE_REF}" > "/usr/local/lib/${SCRIPTNAME}/${SCRIPTNAME}.ref"
+	cat <<EOF > /usr/local/bin/${SCRIPTNAME}
 #!/bin/bash
-bash /usr/local/lib/openmediavault-repository/openmediavault-repository \$@
+bash /usr/local/lib/${SCRIPTNAME}/${SCRIPTNAME} \$@
 exit \$?
 EOF
-	chmod +x /usr/local/bin/openmediavault-repository
-	/usr/local/bin/openmediavault-repository $@
+	chmod +x /usr/local/bin/${SCRIPTNAME}
+	/usr/local/bin/${SCRIPTNAME} $@
 	clean_up $?
 
 fi
