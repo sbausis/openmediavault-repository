@@ -77,13 +77,18 @@ touch ${LOCKFILE}
 REMOTE_REF=$(git ls-remote https://github.com/sbausis/openmediavault-repository.git | grep "refs/heads/master" | awk '{print $1}')
 [ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && LOCAL_REF=$(cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
 
-if [ "${SCRIPTDIR}" != "/usr/local/lib/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
+if [ ! -f "/usr/local/bin/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
 
 	git clone https://github.com/sbausis/openmediavault-repository.git ${TEMPDIR}/openmediavault-repository
 	rm -Rf /usr/local/lib/openmediavault-repository
 	mkdir -p /usr/local/lib/openmediavault-repository
 	cp -Rf ${TEMPDIR}/openmediavault-repository/${SCRIPTNAME} ${TEMPDIR}/openmediavault-repository/.scripts /usr/local/lib/openmediavault-repository/
 	echo "${REMOTE_REF}" > "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref"
+	cat <<EOF > /usr/local/bin/openmediavault-repository
+#!/bin/bash
+bash /usr/local/lib/openmediavault-repository/openmediavault-repository \$@
+exit \$?
+EOF
 	bash /usr/local/lib/openmediavault-repository/${SCRIPTNAME} $@ && clean_up $?
 
 fi
