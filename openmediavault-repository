@@ -83,7 +83,6 @@ MIRROR="1"
 BUILD="1"
 COPY="1"
 DEBARCHIVE="1"
-INSTALL="1"
 
 while getopts ":o:mbcd" opt; do
 	case $opt in
@@ -92,7 +91,6 @@ while getopts ":o:mbcd" opt; do
 		b) BUILD="0" ;;
 		c) COPY="0" ;;
 		d) DEBARCHIVE="0" ;;
-		i) INSTALL="0" ;;
 		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
 		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
 	esac
@@ -118,7 +116,7 @@ bash /usr/local/lib/openmediavault-repository/openmediavault-repository \$@
 exit \$?
 EOF
 	chmod +x /usr/local/bin/openmediavault-repository
-	[ "${INSTALL}" == "1" ] && bash /usr/local/bin/openmediavault-repository $@
+	/usr/local/bin/openmediavault-repository $@
 	clean_up $?
 
 fi
