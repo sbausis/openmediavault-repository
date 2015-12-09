@@ -83,7 +83,8 @@ if [ ! -f "/usr/local/bin/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] 
 bash /usr/local/lib/openmediavault-repository/openmediavault-repository \$@
 exit \$?
 EOF
-	bash /usr/local/lib/openmediavault-repository/${SCRIPTNAME} $@
+	chmod +x /usr/local/bin/openmediavault-repository
+	bash /usr/local/bin/openmediavault-repository $@
 	exit $?
 
 fi
