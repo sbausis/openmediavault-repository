@@ -119,7 +119,7 @@ exit \$?
 EOF
 	chmod +x /usr/local/bin/openmediavault-repository
 	[ "${INSTALL}" == "1" ] && bash /usr/local/bin/openmediavault-repository $@
-	exit $?
+	clean_up $?
 
 fi
 
