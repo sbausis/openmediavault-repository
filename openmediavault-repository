@@ -83,14 +83,16 @@ MIRROR="1"
 BUILD="1"
 COPY="1"
 DEBARCHIVE="1"
+INSTALL="1"
 
-while getopts ":o:mbcd" opt; do
+while getopts ":o:mbcdi" opt; do
 	case $opt in
 		o) OUTDIR="$OPTARG" ;;
 		m) MIRROR="0" ;;
 		b) BUILD="0" ;;
 		c) COPY="0" ;;
 		d) DEBARCHIVE="0" ;;
+		i) INSTALL="0" ;;
 		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
 		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
 	esac
@@ -116,8 +118,13 @@ bash /usr/local/lib/${SCRIPTNAME}/${SCRIPTNAME} \$@
 exit \$?
 EOF
 	chmod +x /usr/local/bin/${SCRIPTNAME}
-	/usr/local/bin/${SCRIPTNAME} $@
-	clean_up $?
+	
+	if [ "${INSTALL}" == "0" ]; then
+		clean_up 0
+	else
+		/usr/local/bin/${SCRIPTNAME} $@
+		clean_up $?
+	fi
 
 fi
 
