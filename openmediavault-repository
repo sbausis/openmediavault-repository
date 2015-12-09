@@ -17,7 +17,7 @@ SCRIPTSDIR="${SCRIPTDIR}/.scripts"
 NEEDEDPACKAGES=""
 if [ -z `which git` ]; then NEEDEDPACKAGES+="git-core "; fi
 if [ -n "${NEEDEDPACKAGES}" ]; then
-	echo "Need ${NEEDEDPACKAGES}, installing them..."
+	echo "Need ${NEEDEDPACKAGES}, installing..."
 	apt-get -qq -y install ${NEEDEDPACKAGES}
 fi
 
@@ -53,10 +53,14 @@ function print_help() {
 ${SCRIPTNAME}  version 0.1b
 Copyright (C) 2015 by Simon Baur (sbausis at gmx dot net)
 
-Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTFILE]
+Usage: ${SCRIPTNAME} [OPTIONS]... -o [OUTDIR]
 
 Options
- -o          set OUTFILE
+ -o          set OUTDIR
+ -m          redownload Mirror
+ -b          build Packages
+ -c          copy Packages to Repo
+ -d          rebuild Repo
 "
 }
 
@@ -66,13 +70,43 @@ function help_exit() {
 }
 
 ################################################################################
+## Need LOCKFILE
+
+trap "{ clean_up 255; }" SIGHUP SIGINT SIGTERM SIGQUIT EXIT
+touch ${LOCKFILE}
+
+################################################################################
+# get Arguments
+
+OUTDIR=""
+MIRROR="1"
+BUILD="1"
+COPY="1"
+DEBARCHIVE="1"
+INSTALL="1"
+
+while getopts ":o:mbcd" opt; do
+	case $opt in
+		o) OUTDIR="$OPTARG" ;;
+		m) MIRROR="0" ;;
+		b) BUILD="0" ;;
+		c) COPY="0" ;;
+		d) DEBARCHIVE="0" ;;
+		i) INSTALL="0" ;;
+		\?) echo "Invalid option: -$OPTARG" >&2 && help_exit ;;
+		:) echo "Option -$OPTARG requires an argument." >&2 && help_exit ;;
+	esac
+done
+
+################################################################################
 # need newest Script installed
 
 REMOTE_REF=$(git ls-remote https://github.com/sbausis/openmediavault-repository.git | grep "refs/heads/master" | awk '{print $1}')
 [ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && LOCAL_REF=$(cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
 
-if [ ! -f "/usr/local/bin/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
-
+if [ ! -f "/usr/local/bin/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ] || [ "${INSTALL}" == "0" ]; then
+	
+	echo "Installing to /usr/local/lib/openmediavault-repository ..."
 	git clone https://github.com/sbausis/openmediavault-repository.git ${TEMPDIR}/openmediavault-repository
 	rm -Rf /usr/local/lib/openmediavault-repository
 	mkdir -p /usr/local/lib/openmediavault-repository
@@ -84,48 +118,23 @@ bash /usr/local/lib/openmediavault-repository/openmediavault-repository \$@
 exit \$?
 EOF
 	chmod +x /usr/local/bin/openmediavault-repository
-	bash /usr/local/bin/openmediavault-repository $@
+	[ "${INSTALL}" == "1" ] && bash /usr/local/bin/openmediavault-repository $@
 	exit $?
 
 fi
 
 ################################################################################
-## Need LOCKFILE
-
-trap "{ clean_up 255; }" SIGHUP SIGINT SIGTERM SIGQUIT EXIT
-touch ${LOCKFILE}
-
-################################################################################
 # need Arguments
-
-OUTDIR=""
-MIRROR="1"
-BUILD="1"
-COPY="1"
-DEBARCHIVE="1"
-
-while getopts ":o:mbcd" opt; do
-	case $opt in
-		o) OUTDIR="$OPTARG" ;;
-		m) MIRROR="0" ;;
-		b) BUILD="0" ;;
-		c) COPY="0" ;;
-		d) DEBARCHIVE="0" ;;
-		\?) echo "Invalid option: -$OPTARG" >&2 && exit 1 ;;
-		:) echo "Option -$OPTARG requires an argument." >&2 && exit 1 ;;
-	esac
-done
 
 [ -z "${OUTDIR}" ] && [ -f "~/.openmediavault-repository" ] && source "~/.openmediavault-repository"
 
-[ -d "${OUTDIR}" ] || exit 1
+if [ ! -d "${OUTDIR}" ]; then
+	echo "no OUTDIR"
+	help_exit
+fi
 
 ################################################################################
 
-echo "[ ${SCRIPTNAME} ] ${OUTDIR}"
-STARTTIME=`date +%s`
-
-################################################################################
 function mirror_repository() {
 	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
@@ -187,13 +196,7 @@ function mirror_repository() {
 		-a "amd64 i386"
 	############################################################################
 }
-################################################################################
-if [ "${MIRROR}" == "0" ]; then
-	mirror_repository "${SCRIPTSDIR}" "${OUTDIR}"
-fi
-################################################################################
 
-################################################################################
 function build_package() {
 	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
@@ -290,13 +293,7 @@ function build_package() {
 		-b "main"
 	############################################################################
 }
-################################################################################
-if [ "${BUILD}" == "0" ]; then
-	build_package "${SCRIPTSDIR}" "${OUTDIR}"	
-fi
-################################################################################
 
-################################################################################
 function copy_packages() {
 	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
@@ -379,13 +376,7 @@ function copy_packages() {
 		-a "amd64 i386"
 	############################################################################
 }
-################################################################################
-if [ "${COPY}" == "0" ]; then
-	copy_packages "${SCRIPTSDIR}" "${OUTDIR}"	
-fi
-################################################################################
 
-################################################################################
 function debarchive_repository() {
 	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
@@ -418,10 +409,32 @@ function debarchive_repository() {
 		-r
 	############################################################################
 }
+
 ################################################################################
+
+echo "[ ${SCRIPTNAME} ] ${OUTDIR}"
+STARTTIME=`date +%s`
+
+if [ "${MIRROR}" == "0" ]; then
+	echo "download Repository ..."
+	mirror_repository "${SCRIPTSDIR}" "${OUTDIR}"
+fi
+
+if [ "${BUILD}" == "0" ]; then
+	echo "build Packages ..."
+	build_package "${SCRIPTSDIR}" "${OUTDIR}"	
+fi
+
+if [ "${COPY}" == "0" ]; then
+	echo "copy Packages to Repository ..."
+	copy_packages "${SCRIPTSDIR}" "${OUTDIR}"	
+fi
+
 if [ "${DEBARCHIVE}" == "0" ]; then
+	echo "update Repository ..."
 	debarchive_repository "${SCRIPTSDIR}" "${OUTDIR}"	
 fi
+
 ################################################################################
 
 STOPTIME=`date +%s`
