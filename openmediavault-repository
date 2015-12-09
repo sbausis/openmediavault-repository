@@ -75,7 +75,7 @@ touch ${LOCKFILE}
 # need newest Script installed
 
 REMOTE_REF=$(git ls-remote https://github.com/sbausis/openmediavault-repository.git | grep "refs/heads/master" | awk '{print $1}')
-LOCAL_REF=$([ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
+[ -f "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref" ] && LOCAL_REF=$(cat "/usr/local/lib/openmediavault-repository/openmediavault-repository.ref")
 
 if [ "${SCRIPTDIR}" != "/usr/local/lib/openmediavault-repository" ] || [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
 
