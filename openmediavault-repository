@@ -278,10 +278,24 @@ function build_package() {
 	############################################################################
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "openmediavault-omvextrasorg" \
+		-b "testing"
+	############################################################################
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-ddclient" \
 		-b "main"
+	############################################################################
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "openmediavault-ddclient" \
+		-b "testing"
 	############################################################################
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
@@ -299,10 +313,31 @@ function build_package() {
 	############################################################################
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
-		-s "stoneburner-testing" \
+		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-dnsmasq" \
 		-b "main"
+	############################################################################
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "openmediavault-dnsmasq" \
+		-b "testing"
+	############################################################################
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner" \
+		-c "main" \
+		-p "openmediavault-hpraid" \
+		-b "main"
+	############################################################################
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "openmediavault-hpraid" \
+		-b "testing"
 	############################################################################
 }
 
