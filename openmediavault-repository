@@ -205,140 +205,180 @@ function mirror_repository() {
 function build_package() {
 	local SCRIPTSDIR="$1"
 	local OUTDIR="$2"
-	############################################################################
+
+############################################################################
+## openmediavault-keyring
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-keyring
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-keyring" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-keyring" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-menuconfig
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-menuconfig" \
 		-b "master"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
 		-s "stoneburner" \
 		-c "testing" \
 		-p "openmediavault-menuconfig" \
 		-b "testing"
-	############################################################################
-	${SCRIPTSDIR}/build_package \
-		-o "${OUTDIR}/.openmediavault-build" \
-		-s "stoneburner" \
-		-c "testing" \
-		-p "openmediavault-testplugin" \
-		-b "master"
-	############################################################################
-	${SCRIPTSDIR}/build_package \
-		-o "${OUTDIR}/.openmediavault-build" \
-		-s "stoneburner" \
-		-c "main" \
-		-p "openmediavault-firewall" \
-		-b "master"
-	############################################################################
-	${SCRIPTSDIR}/build_package \
-		-o "${OUTDIR}/.openmediavault-build" \
-		-s "stoneburner" \
-		-c "testing" \
-		-p "openmediavault-firewall" \
-		-b "testing"
-	############################################################################
+############################################################################
+
+#############################################################################
+### openmediavault-testplugin
+#	### main
+#	${SCRIPTSDIR}/build_package \
+#		-o "${OUTDIR}/.openmediavault-build" \
+#		-s "stoneburner" \
+#		-c "testing" \
+#		-p "openmediavault-testplugin" \
+#		-b "master"
+#	### testing
+#############################################################################
+
+#############################################################################
+### openmediavault-firewall
+#	### main
+#	${SCRIPTSDIR}/build_package \
+#		-o "${OUTDIR}/.openmediavault-build" \
+#		-s "stoneburner" \
+#		-c "main" \
+#		-p "openmediavault-firewall" \
+#		-b "master"
+#	### testing
+#	${SCRIPTSDIR}/build_package \
+#		-o "${OUTDIR}/.openmediavault-build" \
+#		-s "stoneburner" \
+#		-c "testing" \
+#		-p "openmediavault-firewall" \
+#		-b "testing"
+#############################################################################
+
+############################################################################
+## openmediavault-omvextrasorg
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-omvextrasorg" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-omvextrasorg" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-ddclient
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-ddclient" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-ddclient" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-pxe
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-pxe" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-pxe" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-dnsmasq
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner" \
 		-c "main" \
 		-p "openmediavault-dnsmasq" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-dnsmasq" \
 		-b "testing"
-	############################################################################
+############################################################################
+
+############################################################################
+## openmediavault-hpraid
+	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
-		-s "stoneburner" \
+		-s "stoneburner-hwraid" \
 		-c "main" \
 		-p "openmediavault-hpraid" \
 		-b "main"
-	############################################################################
+	### testing
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.omvextras-build" \
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "openmediavault-hpraid" \
 		-b "testing"
-	############################################################################
+############################################################################
 }
 
 function copy_packages() {
