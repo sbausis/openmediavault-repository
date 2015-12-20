@@ -400,21 +400,21 @@ function build_package() {
 
 ############################################################################
 ### phpvirtualbox
-#	### main
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.omvextras-build" \
-#		-s "stoneburner-vb" \
-#		-c "main" \
-#		-p "phpvirtualbox" \
-#		-b "main"
-#	### testing
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.omvextras-build" \
-#		-s "stoneburner-testing" \
-#		-c "main" \
-#		-p "phpvirtualbox" \
-#		-b "testing"
-#############################################################################
+	### main
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-vb" \
+		-c "main" \
+		-p "phpvirtualbox" \
+		-b "main"
+	### testing
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "phpvirtualbox" \
+		-b "testing"
+############################################################################
 
 ############################################################################
 ### virtualbox-extpack-installer

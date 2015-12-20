@@ -98,6 +98,8 @@ function build_package() {
 	
 	if [ -z "${LOCAL_REF}" ] || [ "${LOCAL_REF}" != "${REMOTE_REF}" ]; then
 		
+		echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH}"
+		
 		local PKGFILE=$(_build_package "${TEMPDIR}/${PACKAGE}-${BRANCH}" "${PACKAGE}" "${BRANCH}")
 		local PKGARCH=$(echo "${PKGFILE}" | sed 's/.*_\(.*\).deb/\1/')
 		local PKGDIR="${COMPDIR}/${PKGARCH}/${PACKAGE:0:1}/${PACKAGE}"
@@ -152,7 +154,7 @@ fi
 
 ################################################################################
 
-echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH}"
+#echo "[ ${SCRIPTNAME} ] ${PACKAGE} ${BRANCH}"
 
 build_package "${BUILDDIR}" "${SUITE}" "${COMP}" "${PACKAGE}" "${BRANCH}"
 
