@@ -207,7 +207,7 @@ function build_package() {
 	local OUTDIR="$2"
 
 ############################################################################
-## openmediavault-keyring
+## openmediavault
 	### main
 	${SCRIPTSDIR}/build_package \
 		-o "${OUTDIR}/.openmediavault-build" \
@@ -418,20 +418,20 @@ function build_package() {
 
 ############################################################################
 ### virtualbox-extpack-installer
-#	### main
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.omvextras-build" \
-#		-s "stoneburner-vb" \
-#		-c "main" \
-#		-p "virtualbox-extpack-installer" \
-#		-b "main"
-#	### testing
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.omvextras-build" \
-#		-s "stoneburner-testing" \
-#		-c "main" \
-#		-p "virtualbox-extpack-installer" \
-#		-b "testing"
+	### main
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-vb" \
+		-c "main" \
+		-p "virtualbox-extpack-installer" \
+		-b "main"
+	### testing
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "virtualbox-extpack-installer" \
+		-b "testing"
 ############################################################################
 }
 
