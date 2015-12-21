@@ -200,6 +200,13 @@ function mirror_repository() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
+	${SCRIPTSDIR}/mirror_repository \
+		-d "${OUTDIR}/.virtualbox-mirror" \
+		-u "http://download.virtualbox.org/virtualbox/debian" \
+		-s "wheezy" \
+		-c "contrib" \
+		-a "amd64 i386"
+	############################################################################
 }
 
 function build_package() {
