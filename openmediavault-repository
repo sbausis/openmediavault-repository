@@ -484,6 +484,14 @@ function copy_packages() {
 		-a "amd64 i386"
 	############################################################################
 	${SCRIPTSDIR}/copy_packages \
+		-d "${OUTDIR}/omvextras_test" \
+		-i "${OUTDIR}/.virtualbox-mirror ${OUTDIR}/.virtualbox-build" \
+		-s "wheezy" \
+		-z "virtualbox-wheezy-mirror" \
+		-c "contrib" \
+		-a "amd64 i386"
+	############################################################################
+	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.bintray-stoneburner-beta-mirror ${OUTDIR}/.bintray-stoneburner-beta-build" \
 		-s "wheezy" \
