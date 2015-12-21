@@ -84,10 +84,12 @@ BUILD="1"
 COPY="1"
 DEBARCHIVE="1"
 INSTALL="1"
+GPGDIR=""
 
-while getopts ":o:mbcdi" opt; do
+while getopts ":o:g:mbcdi" opt; do
 	case $opt in
 		o) OUTDIR="$OPTARG" ;;
+		g) GPGDIR="$OPTARG" ;;
 		m) MIRROR="0" ;;
 		b) BUILD="0" ;;
 		c) COPY="0" ;;
@@ -131,7 +133,9 @@ fi
 ################################################################################
 # need Arguments
 
-[ -z "${OUTDIR}" ] && [ -f ~/.openmediavault-repository ] && source ~/.openmediavault-repository
+[ -z "${OUTDIR}" ] && [ -f ~/.openmediavault-repository/path.include ] && source ~/.openmediavault-repository/path.include
+[ -z "${GPGDIR}" ] && [ -d ~/.openmediavault-repository/gnupg ] && GPGDIR="~/.openmediavault-repository/gnupg"
+[ -z "${GPGDIR}" ] && GPGDIR="${OUTDIR}/.gnupg"
 
 if [ ! -d "${OUTDIR}" ]; then
 	echo "no OUTDIR"
@@ -555,7 +559,7 @@ function debarchive_repository() {
 	############################################################################
 	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
+		-g "${GPGDIR}" \
 		-n "openmediavault" \
 		-s "stoneburner" \
 		-c "main" \
@@ -564,7 +568,7 @@ function debarchive_repository() {
 	############################################################################
 	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/openmediavault" \
-		-g "${OUTDIR}/.gnupg" \
+		-g "${GPGDIR}" \
 		-n "openmediavault" \
 		-s "stoneburner" \
 		-c "testing" \
@@ -573,7 +577,7 @@ function debarchive_repository() {
 	############################################################################
 	${SCRIPTSDIR}/debarchive_repository \
 		-d "${OUTDIR}/omvextras" \
-		-g "${OUTDIR}/.gnupg" \
+		-g "${GPGDIR}" \
 		-n "omvextras" \
 		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror stoneburner-beta stoneburner-zfs stoneburner-zfs-testing stoneburner-docker stoneburner-docker-testing " \
 		-c "main" \
