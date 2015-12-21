@@ -134,7 +134,7 @@ fi
 # need Arguments
 
 [ -z "${OUTDIR}" ] && [ -f ~/.openmediavault-repository/path.include ] && source ~/.openmediavault-repository/path.include
-[ -z "${GPGDIR}" ] && [ -d ~/.openmediavault-repository/gnupg ] && GPGDIR="~/.openmediavault-repository/gnupg"
+[ -z "${GPGDIR}" ] && [ -d ~/.openmediavault-repository/gnupg ] && GPGDIR=~/.openmediavault-repository/gnupg
 [ -z "${GPGDIR}" ] && GPGDIR="${OUTDIR}/.gnupg"
 
 if [ ! -d "${OUTDIR}" ]; then
