@@ -161,7 +161,7 @@ function mirror_repository() {
 	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.dh2k-mirror" \
 		-u "http://dh2k.omv-extras.org/debian" \
-		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror" \
+		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
@@ -205,6 +205,13 @@ function mirror_repository() {
 		-u "http://download.virtualbox.org/virtualbox/debian" \
 		-s "wheezy" \
 		-c "contrib" \
+		-a "amd64 i386"
+	############################################################################
+	${SCRIPTSDIR}/mirror_repository \
+		-d "${OUTDIR}/.plex-mirror" \
+		-u "http://shell.ninthgate.se/packages/debian" \
+		-s "wheezy" \
+		-c "main" \
 		-a "amd64 i386"
 	############################################################################
 }
@@ -479,7 +486,7 @@ function copy_packages() {
 	${SCRIPTSDIR}/copy_packages \
 		-d "${OUTDIR}/omvextras" \
 		-i "${OUTDIR}/.dh2k-mirror ${OUTDIR}/.dh2k-build" \
-		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror" \
+		-s "stoneburner-miller stoneburner-miller-testing stoneburner-vpn" \
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
@@ -490,6 +497,14 @@ function copy_packages() {
 		-z "virtualbox-wheezy-mirror" \
 		-c "contrib" \
 		-k "main" \
+		-a "amd64 i386"
+	############################################################################
+	${SCRIPTSDIR}/copy_packages \
+		-d "${OUTDIR}/omvextras" \
+		-i "${OUTDIR}/.plex-mirror ${OUTDIR}/.plex-build" \
+		-s "wheezy" \
+		-z "plex-wheezy-mirror" \
+		-c "main" \
 		-a "amd64 i386"
 	############################################################################
 	${SCRIPTSDIR}/copy_packages \
