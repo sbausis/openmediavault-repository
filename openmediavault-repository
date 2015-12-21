@@ -489,6 +489,7 @@ function copy_packages() {
 		-s "wheezy" \
 		-z "virtualbox-wheezy-mirror" \
 		-c "contrib" \
+		-k "main" \
 		-a "amd64 i386"
 	############################################################################
 	${SCRIPTSDIR}/copy_packages \
