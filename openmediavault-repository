@@ -205,6 +205,13 @@ function mirror_repository() {
 		-a "amd64 i386"
 	############################################################################
 	${SCRIPTSDIR}/mirror_repository \
+		-d "${OUTDIR}/.bintray-stoneburner-sync" \
+		-u "http://dl.bintray.com/openmediavault-plugin-developers/stoneburner-sync" \
+		-s "wheezy" \
+		-c "main" \
+		-a "amd64 i386"
+	############################################################################
+	${SCRIPTSDIR}/mirror_repository \
 		-d "${OUTDIR}/.virtualbox-mirror" \
 		-u "http://download.virtualbox.org/virtualbox/debian" \
 		-s "wheezy" \
@@ -551,6 +558,14 @@ function copy_packages() {
 		-c "main" \
 		-a "amd64 i386"
 	############################################################################
+	${SCRIPTSDIR}/copy_packages \
+		-d "${OUTDIR}/omvextras" \
+		-i "${OUTDIR}/.bintray-stoneburner-sync ${OUTDIR}/.bintray-stoneburner-sync-build" \
+		-s "wheezy" \
+		-z "stoneburner-sync" \
+		-c "main" \
+		-a "amd64 i386"
+	############################################################################
 }
 
 function debarchive_repository() {
@@ -579,7 +594,7 @@ function debarchive_repository() {
 		-d "${OUTDIR}/omvextras" \
 		-g "${GPGDIR}" \
 		-n "omvextras" \
-		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror stoneburner-beta stoneburner-zfs stoneburner-zfs-testing stoneburner-docker stoneburner-docker-testing " \
+		-s "stoneburner-backports stoneburner stoneburner-testing stoneburner-vb stoneburner-plex stoneburner-greyhole stoneburner-vdr stoneburner-btsync stoneburner-gluster stoneburner-mono stoneburner-mono-testing stoneburner-hwraid stoneburner-miller stoneburner-miller-testing stoneburner-vpn plex-wheezy-mirror virtualbox-wheezy-mirror stoneburner-beta stoneburner-zfs stoneburner-zfs-testing stoneburner-docker stoneburner-docker-testing stoneburner-sync" \
 		-c "main" \
 		-a "amd64 i386" \
 		-r
