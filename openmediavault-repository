@@ -297,23 +297,23 @@ function build_package() {
 #	### testing
 #############################################################################
 
-#############################################################################
-### openmediavault-firewall
-#	### main
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.openmediavault-build" \
-#		-s "stoneburner" \
-#		-c "main" \
-#		-p "openmediavault-firewall" \
-#		-b "master"
-#	### testing
-#	${SCRIPTSDIR}/build_package \
-#		-o "${OUTDIR}/.openmediavault-build" \
-#		-s "stoneburner" \
-#		-c "testing" \
-#		-p "openmediavault-firewall" \
-#		-b "testing"
-#############################################################################
+############################################################################
+## openmediavault-firewall
+	### main
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.openmediavault-build" \
+		-s "stoneburner" \
+		-c "main" \
+		-p "openmediavault-firewall" \
+		-b "master"
+	### testing
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.openmediavault-build" \
+		-s "stoneburner" \
+		-c "testing" \
+		-p "openmediavault-firewall" \
+		-b "testing"
+############################################################################
 
 ############################################################################
 ## openmediavault-omvextrasorg
@@ -456,6 +456,24 @@ function build_package() {
 		-s "stoneburner-testing" \
 		-c "main" \
 		-p "virtualbox-extpack-installer" \
+		-b "testing"
+############################################################################
+
+############################################################################
+## openmediavault-hostapd
+	### main
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner" \
+		-c "main" \
+		-p "openmediavault-hostapd" \
+		-b "master"
+	### testing
+	${SCRIPTSDIR}/build_package \
+		-o "${OUTDIR}/.omvextras-build" \
+		-s "stoneburner-testing" \
+		-c "main" \
+		-p "openmediavault-hostapd" \
 		-b "testing"
 ############################################################################
 }
