@@ -15,8 +15,8 @@ SCRIPTNAME=$(basename "$0")
 NEEDEDPACKAGES=""
 if [ -z `which dch` ]; then NEEDEDPACKAGES+="devscripts "; fi
 if [ -z `which make` ]; then NEEDEDPACKAGES+="build-essential "; fi
-if [ -z `which dh_builddeb` ]; then NEEDEDPACKAGES+="git-core "; fi
-if [ -z `which git` ]; then NEEDEDPACKAGES+="debhelper "; fi
+if [ -z `which dh_builddeb` ]; then NEEDEDPACKAGES+="debhelper "; fi
+if [ -z `which git` ]; then NEEDEDPACKAGES+="git-core "; fi
 if [ -n "${NEEDEDPACKAGES}" ]; then
 	echo "Need ${NEEDEDPACKAGES}, installing them..."
 	apt-get -qq -y install ${NEEDEDPACKAGES}
